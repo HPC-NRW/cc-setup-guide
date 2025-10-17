@@ -1,7 +1,7 @@
 site_name: ClusterCockpit Setup Guide
 repo_url: https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb/cc-setup-guide
 repo_name: hpc.nrw/ap3/energieeffizienter-betrieb/cc-setup-guide
-site_url: https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb/cc-setup-guide
+#site_url: https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb/cc-setup-guide
 
 theme:
   name: material
