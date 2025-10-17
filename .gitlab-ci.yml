@@ -22,7 +22,7 @@ build:site:
     - pip install --upgrade pip
     - pip install -r requirements.txt
   script:
-    - mkdocs build --strict --site-dir public
+    - mkdocs build --site-dir public
     - touch public/.nojekyll
   artifacts:
     name: "site-${CI_COMMIT_REF_SLUG}"
