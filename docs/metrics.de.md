@@ -41,14 +41,14 @@ Dafür nutzen wir den `messageProcessor` aus der `cc-lib`, der über die `router
   ],
   "interval_timestamp": false,
   "num_cache_intervals": 0,
-  "hostname_tag": "hostname",
   "normalize_units": true,
   "process_messages": {
+    "hostname_tag": "hostname",
     "rename_messages": {
       "load_one": "cpu_load"
     },
     "drop_messages_if": [
-      "!name in [`load_one`]"
+      "!(name in [`load_one`])"
     ]
   }
 }

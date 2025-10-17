@@ -5,12 +5,12 @@
 
 Dieser Guide wurde im Rahmen des Projekts [HPC.NRW](https://hpc.dh.nrw) erstellt und nutzt Beispielkonfigurationen der [FAU Erlangen](https://github.com/ClusterCockpit/cc-examples/tree/main/nhr%40fau) und der Ruhr-Universität Bochum.
 
-ClusterCockpit ist eine moderne, quelloffene Lösung für jobspezifisches Monitoring und die Analyse von HPC-Clustern.  
-Ziel von ClusterCockpit ist es, Administratoren und Nutzenden eine umfassende Übersicht über die Auslastung, Effizienz und den Zustand der Clusterressourcen zu bieten, indem es Jobdaten, Performance- und Energiemetriken sowie weitere Statistiken kombiniert.
-
 ---
 
 ## Was ist ClusterCockpit?
+
+ClusterCockpit ist eine moderne, quelloffene Lösung für jobspezifisches Monitoring und die Analyse von HPC-Clustern.  
+Ziel von ClusterCockpit ist es, Administratoren und Nutzenden eine umfassende Übersicht über die Auslastung, Effizienz und den Zustand der Clusterressourcen zu bieten, indem es Jobdaten, Performance- und Energiemetriken sowie weitere Statistiken kombiniert.
 
 ClusterCockpit wird an der [Friedrich-Alexander-Universität Erlangen-Nürnberg (FAU)](https://www.fau.de/) entwickelt und steht unter einer Open-Source-Lizenz.  
 Die offizielle Projektwebseite mit weiteren Ressourcen, Demos, Downloads und Dokumentation befindet sich unter:  
@@ -70,6 +70,7 @@ Die Plattform ist modular aufgebaut und unterstützt u.a. folgende Metriken (abh
 Diese Anleitung richtet sich an Systemadministratoren, die ClusterCockpit in einer eigenen HPC-Umgebung installieren, konfigurieren und betreiben möchten.
 
 **Vorausgesetzt werden:**
+
 - Grundkenntnisse in Linux-Administration
 - SSH-Zugang zu den Zielsystemen
 - Grundverständnis für Cluster-Architektur (SLURM, Management- vs. Compute-Knoten)

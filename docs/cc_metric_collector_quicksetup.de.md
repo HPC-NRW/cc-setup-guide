@@ -235,6 +235,7 @@ Die folgende Konfiguration basiert auf dem Elysium-Cluster der RUB und deckt typ
   - `clock`, `ipc`, `flops_any`, `core_power` (scope: hwthread) sowie `mem_bw` (scope: socket) – Hardware-Performance-Counter.
 
 Folgende Anpassungen sind für eine eigene Konfiguration nötig:
+
 - `use_sudo` nur auf `true` setzen, falls der Collector nicht als `root` läuft.
 - `netstat`: Den Namen des Ethernet-Interfaces anpassen.
 - `diskstat`: Filter auf die passende Partition abstimmen.

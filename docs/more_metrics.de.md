@@ -29,8 +29,7 @@ MemAvailable:   19816380 kB
 Buffers:            6656 kB
 Cached:         12963688 kB
 ```
-Wir wollen `mem_used` erheben (=`mem_total`-(`mem_free`
- + `mem_buffers` + `mem_cached`))
+Wir wollen `mem_used` erheben (=`mem_total`-(`mem_free` + `mem_buffers` + `mem_cached`))
 
 Scope: Node
 
