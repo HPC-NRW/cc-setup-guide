@@ -1,0 +1,112 @@
+site_name: ClusterCockpit Setup Guide
+repo_url: https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb
+repo_name: hpc.nrw/ap3/energieeffizienter-betrieb
+site_url: https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark theme
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light theme
+  features:
+    # Navigation & Struktur
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.footer
+    - navigation.top
+    - navigation.tracking
+    # Inhaltsverzeichnis
+    - toc.integrate
+    - toc.follow
+    # Suche & Inhalte
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.tabs.link
+    - content.tooltips
+    # Header-UX
+    - header.autohide
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search:
+      lang:
+        - en
+        - de
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: en
+          name: English
+          build: true
+          default: true
+          nav:
+            - Introduction: index.md
+            - Server Preparation: system_preparation.md
+            - Monitoring Server: monitoringserver.md
+            - Webinterface: webinterface.md
+            - Create First Cluster & Define Subcluster: cluster_setup.md
+            - Metrics and Collectors:
+                - Set Up cc-metric-collector: cc_metric_collector_setup.md
+                - Step-by-step First Metric: metrics.md
+                - Step-by-step Additional Metrics: more_metrics.md
+                - Quick Setup (Fast Track): cc_metric_collector_quicksetup.md
+                - Collectors Overview: collectors.md
+                - LIKWID Metrics: likwid_metrics.md
+            - Slurm Integration:
+                - Install cc-slurm-adapter: slurm_integration.md
+            - Advanced Topics:
+                - Add New Metric: advanced.md#new_metric
+                - Custom Commands (customcmd): advanced.md#customcmd
+                - receivers.json: advanced.md#receivers
+                - sinks.json: advanced.md#sinks
+            - Operation & Troubleshooting: operation.md
+            - FAQ: faq.md
+            - Scripts: scripts.md
+        - locale: de
+          name: Deutsch
+          build: true
+          nav:
+            - Einführung: index.md
+            - Monitoring Server:
+               - Servervorbereitung: system_preparation.md
+               - Server-Komponenten installieren: monitoringserver.md
+               - Webinterface: webinterface.md
+               - Ersten Cluster anlegen & Subcluster definieren: cluster_setup.md
+            - Metriken und Collectoren:
+                - cc-metric-collector einrichten: cc_metric_collector_setup.md
+                - Schritt-für-Schritt Erste Metrik: metrics.md
+                - Schritt-für-Schritt Weitere Metriken: more_metrics.md
+                - Quick Setup (Schnellstart): cc_metric_collector_quicksetup.md
+                - Collector-Übersicht: collectors.md
+                - LIKWID Metriken: likwid_metrics.md
+            - Slurm-Integration:
+                - cc-slurm-adapter installieren: slurm_integration.md
+            - Erweiterte Themen:
+                - Neue Metrik hinzufügen: advanced.md#new_metric
+                - Custom Commands (customcmd): advanced.md#customcmd
+                - receivers.json: advanced.md#receivers
+                - sinks.json: advanced.md#sinks
+            - Betrieb & Troubleshooting: operation.md
+            - FAQ: faq.md
+            - Skripte: scripts.md
+  - minify:
+      minify_html: true
+  - redirects

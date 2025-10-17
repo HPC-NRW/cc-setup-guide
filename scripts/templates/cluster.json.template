@@ -1,0 +1,64 @@
+{
+  "name": "__CLUSTER_NAME__",
+  "metricConfig": [
+    {
+      "name": "cpu_load",
+      "unit": {
+        "base": ""
+      },
+      "scope": "node",
+      "aggregation": "avg",
+      "footprint": "avg",
+      "timestep": 60,
+      "peak": 1,
+      "normal": 1,
+      "caution": 1,
+      "alert": 1   
+    }
+  ],
+  "subClusters": [
+    {
+      "name": "first_subcluster",
+      "nodes": "node001",
+      "processorType": "Demo CPU Type",
+      "socketsPerNode": 1,
+      "coresPerSocket": 1,
+      "threadsPerCore": 1,
+      "flopRateScalar": {
+        "unit": {
+          "base": "F/s",
+          "prefix": "G"
+        },
+        "value": 1
+      },
+      "flopRateSimd": {
+        "unit": {
+          "base": "F/s",
+          "prefix": "G"
+        },
+        "value": 1
+      },
+      "memoryBandwidth": {
+        "unit": {
+          "base": "B/s",
+          "prefix": "G"
+        },
+        "value": 1
+      },
+      "topology": {
+        "node": [
+          0
+        ],
+        "socket": [
+          [0]
+               ],
+        "memoryDomain": [
+          [0]
+        ],
+        "core": [
+          [0]
+        ]
+      }
+    }
+  ]
+}

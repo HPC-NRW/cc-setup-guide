@@ -1,0 +1,21 @@
+[Unit]
+Description=ClusterCockpit Web Server (Go edition)
+Documentation=https://github.com/ClusterCockpit/cc-backend
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+WorkingDirectory=__INSTALL_DIR__/cc-backend
+EnvironmentFile=__INSTALL_DIR__/cc-backend/.env
+User=clustercockpit
+Group=clustercockpit
+Type=notify
+NotifyAccess=all
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=100
+ExecStart=__INSTALL_DIR__/cc-backend/cc-backend -server --config __INSTALL_DIR__/cc-backend/config.json
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

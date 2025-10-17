@@ -1,0 +1,37 @@
+digraph G {
+  rankdir=LR;
+  fontname="Helvetica,Arial,sans-serif";
+
+  // --- Cluster-Teil ---
+  subgraph cluster_cluster {
+    label="Cluster";
+    color=lightgrey;
+    style=filled;
+    fillcolor="#f9f9f9";
+    node [shape=box, style=filled, fillcolor=white, fontname="Helvetica,Arial,sans-serif"];
+
+    nodeA [label="NodeA\ncc-metric-collector"];
+    nodeB [label="NodeB\ncc-metric-collector"];
+    nodeC [label="NodeC\ncc-metric-collector"];
+    mgm   [label="mgm\ncc-slurm-adapter"];
+  }
+
+  // --- Monitoring-Server-Teil ---
+  subgraph cluster_monitoring {
+    label="Monitoring Server";
+    style=dashed;           // <- richtig!
+    color=black;
+    node [shape=box, style=filled, fillcolor=white, fontname="Helvetica,Arial,sans-serif"];
+
+    store [label="cc-metric-store", shape=cylinder];
+    backend [label="cc-backend"];
+  }
+
+  // --- Kanten ---
+  nodeA -> store;
+  nodeB -> store;
+  nodeC -> store;
+  mgm   -> backend;
+  store -> backend;
+  backend -> store;
+}

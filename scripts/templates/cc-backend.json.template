@@ -1,0 +1,38 @@
+{
+    "addr": "0.0.0.0:8080",
+    "archive": {
+        "kind": "file",
+        "path": "./var/job-archive"
+    },
+    "clusters": [
+        {
+            "name": "__CLUSTER_NAME__",
+            "metricDataRepository": {
+                "kind": "cc-metric-store",
+                "url": "http://localhost:8082",
+                "token": "__API_TOKEN__"
+            },
+            "filterRanges": {
+                "numNodes": {
+                    "from": 1,
+                    "to": 64
+                },
+                "duration": {
+                    "from": 0,
+                    "to": 86400
+                },
+                "startTime": {
+                    "from": "2025-01-01T00:00:00Z",
+                    "to": null
+                }
+            }
+        }
+    ],
+    "jwts": {
+        "cookieName": "session",
+        "validateUser": false,
+        "max-age": ""
+    },
+    "apiAllowedIPs": ["*"],
+    "short-running-jobs-duration": 30
+}
