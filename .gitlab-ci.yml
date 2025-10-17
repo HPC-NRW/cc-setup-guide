@@ -1,15 +1,49 @@
-# The Docker image that will be used to build your app
-image: alpine:3.20
-create-pages:
-  pages:
-    # The folder that contains the files to be exposed at the Page URL
-    publish: public
+ .gitlab-ci.yml — Build & Deploy MkDocs (Material + i18n) to GitLab Pages
+
+stages:
+  - build
+  - deploy
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_CACHE_DIR: "1"
+
+cache:
+  key: "pip-${CI_COMMIT_REF_SLUG}"
+  paths:
+    - .cache/pip/
+
+build:site:
+  stage: build
+  image: python:3.12-slim
   rules:
-    # This ensures that only pushes to the default branch will trigger
-    # a pages deploy
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-  # Functions that should be executed before the build script is run
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
   before_script:
+    - python -V
+    - pip install --upgrade pip
     - pip install -r requirements.txt
   script:
     - mkdocs build --strict --site-dir public
+    - touch public/.nojekyll
+  artifacts:
+    name: "site-${CI_COMMIT_REF_SLUG}"
+    when: always
+    expire_in: 7 days
+    paths:
+      - public/
+
+pages:
+  stage: deploy
+  image: alpine:3.20
+  needs: ["build:site"]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: on_success
+    - when: never
+  script:
+    - echo "Deploying GitLab Pages from ./public"
+  artifacts:
+    paths:
+      - public/
+    expire_in: 30 days
