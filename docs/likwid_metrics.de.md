@@ -94,13 +94,13 @@ Die Ausgabe beschreibt Events und berechnete Metriken. Beispiel für Zen4 `MEMRE
       "calc": "1.0E-06*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0/time",
       "name": "Memory read bandwidth [MBytes/s]",
       "publish": true,
-      "type": "hwthread"
+      "type": "socket"
     },
     {
       "calc": "1.0E-09*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0",
       "name": "Memory read data volume [GBytes]",
       "publish": true,
-      "type": "hwthread"
+      "type": "socket"
     }
   ]
 }
@@ -157,13 +157,13 @@ Um die Memory Bandwidth zu erhalten, muss zusätzlich `MEMWRITE` ausgegeben werd
       "calc": "1.0E-06*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0/time",
       "name": "Memory write bandwidth [MBytes/s]",
       "publish": true,
-      "type": "hwthread"
+      "type": "socket"
     },
     {
       "calc": "1.0E-09*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0",
       "name": "Memory write data volume [GBytes]",
       "publish": true,
-      "type": "hwthread"
+      "type": "socket"
     }
   ]
 }
@@ -191,7 +191,7 @@ In der `collectors.json` beschränken wir uns auf die benötigten Counter und di
             "calc": "1.0E-09*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0/time",
             "name": "mem_read",
             "publish": false,
-            "type": "hwthread"
+            "type": "socket"
           }
         ]
       },
@@ -215,7 +215,7 @@ In der `collectors.json` beschränken wir uns auf die benötigten Counter und di
             "calc": "1.0E-09*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0/time",
             "name": "mem_write",
             "publish": false,
-            "type": "hwthread"
+            "type": "socket"
           }
         ]
       }

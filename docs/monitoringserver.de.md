@@ -285,8 +285,7 @@ echo "$API_PASS" > apiuser_password.txt
 ```
 
 > **Hinweis:** In der generierten `config.json` bleibt `jwts.max-age` standardmäßig leer. Das API-Token läuft damit nicht ab. Soll eine maximale Lebensdauer erzwungen werden, kann dort eine Zeitangabe (z. B. `8760h` für ein Jahr) hinterlegt werden. Nach Ablauf der Zeit ist ein neues Token zu erzeugen.
-> Ebenfalls sinnvoll: `apiAllowedIPs` auf vertrauenswürdige Quellen einschränken. Die Standardkonfiguration erlaubt alle Adressen (`"*").
-> *TODO:* genaue Syntax prüfen; CIDR-Angaben funktionierten im Kurztest nicht.
+> Ebenfalls sinnvoll: `apiAllowedIPs` auf vertrauenswürdige Quellen einschränken. Die Standardkonfiguration erlaubt alle Adressen (`"*"). Es ist nur möglich eine Liste von IP-Adressen anzugeben, keine CIDR-Notation für Subnetze.
 
 ---
 
