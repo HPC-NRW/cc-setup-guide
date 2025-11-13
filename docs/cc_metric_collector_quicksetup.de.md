@@ -199,40 +199,60 @@ Die folgende Konfiguration basiert auf dem Elysium-Cluster der RUB und deckt typ
 }
 ```
 
-### Überblick: Collectoren und welche Metriken sie liefern
+# **Collector-Übersicht nach Kategorien**
 
-- **loadavg**
-  - `cpu_load` (scope: node) – 1-Minuten-Load des Knotens, Basis für die Pflichtmetrik.
-- **schedstat**
-  - `cpu_load_core` (scope: hwthread) – Auslastung je Hardware-Thread, hilft bei der Analyse von Pinning-Problemen.
-- **cpustat**
-  - `cpu_user` (scope: hwthread) – CPU-Zeitanteile.
-- **memstat** (`node_stats: true`, `numa_stats: true`)
-  - `mem_used` (scope: node/memoryDomain) – Arbeitsspeicherbelegung pro Knoten und NUMA-Domain.
-- **slurm_cgroup** (`use_sudo: true`)
-  - `job_mem_used` (scope: hwthread) – Arbeitsspeicherbelegung pro Hardware-Thread.
-- **numastats** (`send_derived_values: true`)
-  - `numastats_*_rate` (scope: node) – NUMA-Migrations- und Miss-Raten.
-- **diskstat** (`exclude_mounts`)
-  - `disk_free` (scope: node) – Freier lokaler Plattenspeicher, hier ohne `/scratch/slurm-tmpfs`.
-- **iostat** (`exclude_devices`)
-  - `io_reads`, `io_writes` (scope: node) – Block-I/O, Filter grenzt auf gewollte Partition (`nvme0n1p4`) ein.
-- **lustrestat** (`use_sudo: true`, `send_derived_values: true`, `send_diff_values: true`)
-  - `lustre_read_bw`, `lustre_write_bw`, `lustre_open_diff`, `lustre_close_diff`, `lustre_statfs_diff` (scope: node) – Bandbreiten und Operationen seit der letzten Messung.
-- **netstat** (`include_devices`, `interface_aliases`)
-  - `net_bytes_in_bw`, `net_bytes_out_bw`, `net_pkts_in_bw`, `net_pkts_out_bw` (scope: node) – Ethernet-Durchsatz; Aliase erlauben eine gemeinsame Konfiguration.
-- **nfs4stat** (`nfsstat` Pfad)
-  - `nfs4_open`, `nfs4_close` (scope: node) – NFSv4-Aufrufstatistik.
-- **nfsiostat** (`use_server_as_stype`, `send_derived_values: true`)
-  - `nread`, `nwrite`, `nfsio_nread_bw`, `nfsio_nwrite_bw` (scope: node) – Durchsatz je Export.
-- **ibstat** (`send_derived_values: true`)
-  - `ib_recv_bw`, `ib_xmit_bw`, `ib_recv_pkts_bw`, `ib_xmit_pkts_bw` (scope: node) – InfiniBand-Bandbreite und Paketdurchsatz.
-- **customcmd**
-  - frei definierbare Kommandos, hier `/usr/bin/total_node_power` für die Knotenleistung via IPMI.
-- **nvidia** (`use_pci_info_as_type_id`, `add_pci_info_tag`)
-  - `acc_utilization`, `acc_mem_used`, `acc_power`, `acc_mem_util`, `nv_compute_processes` (scope: accelerator) – GPU-Telemetrie, eindeutig per PCI-ID.
-- **likwid** (Eventsets & Globalmetrics)
-  - `clock`, `ipc`, `flops_any`, `core_power` (scope: hwthread) sowie `mem_bw` (scope: socket) – Hardware-Performance-Counter.
+---
+
+## CPU & Load
+
+| Collector     | Metrik                                    | Scope    | Beschreibung                           |
+| ------------- | ----------------------------------------- | -------- | ---------------------------------------|
+| **loadavg**   | `cpu_load`                                | node     | 1-Minuten Load                         |
+| **schedstat** | `cpu_load_core`                           | hwthread | Auslastung je Hardware-Thread          |
+| **cpustat**   | `cpu_user`                                | hwthread | Nutzer-CPU-Anteile pro Hardware-Thread |
+| **likwid**    | `clock`, `ipc`, `flops_any`, `core_power` | hwthread | CPU-Performance-Counter                |
+
+---
+
+## Memory & NUMA
+
+| Collector        | Metrik             | Scope               | Beschreibung                        |
+| ---------------- | ------------------ | ------------------- | ----------------------------------- |
+| **memstat**      | `mem_used`         | node / memoryDomain | RAM-Belegung pro Node & NUMA-Domain |
+| **slurm_cgroup** | `job_mem_used`     | hwthread            | Jobbezogene RAM-Auslastung          |
+| **numastats**    | `numastats_*_rate` | memoryDomain        | NUMA-Migrationen & Misses/Sekunde   |
+| **likwid**       | `mem_bw`           | socket              | Memory-Bandbreite pro Socket        |
+
+---
+
+## Storage (Lokal, Lustre, NFS)
+
+| Collector      | Metrik                             | Scope | Beschreibung                               |
+| -------------- | ---------------------------------- | ----- | ------------------------------------------ |
+| **diskstat**   | `disk_free`                        | node  | Freier lokaler Plattenspeicher             |
+| **iostat**     | `io_reads`, `io_writes`            | node  | Block-I/O, gefiltert auf gewünschte Geräte |
+| **lustrestat** | diverse (`read_bw`, `open_diff`)   | node  | Lustre-Bandbreite & Operationen            |
+| **nfs4stat**   | `nfs4_open`, `nfs4_close`          | node  | NFSv4-Aufrufstatistik                      |
+| **nfsiostat**  | `nread`, `nwrite`, `n*_bw`         | node  | NFS-I/O pro Export                         |
+
+---
+
+## Netzwerk
+
+| Collector   | Metrik                               | Scope | Beschreibung           |
+| ----------- | ------------------------------------ | ----- | ---------------------- |
+| **netstat** | `net_bytes_in_bw`, `net_pkts_out_bw` | node  | Ethernet-Durchsatz     |
+| **ibstat**  | `ib_recv_bw`, `ib_xmit_pkts_bw`      | node  | InfiniBand-Performance |
+
+---
+
+## GPU
+
+| Collector  | Metrik                                         | Scope       | Beschreibung                        |
+| ---------- | ---------------------------------------------- | ----------- | ----------------------------------- |
+| **nvidia** | `acc_utilization`, `acc_mem_used`, `acc_power` | accelerator | GPU-Auslastung, Verbrauch, Prozesse |
+
+---
 
 Folgende Anpassungen sind für eine eigene Konfiguration nötig:
 
