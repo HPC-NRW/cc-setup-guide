@@ -76,6 +76,14 @@ Die `collectors.json` startet leer (`{}`) und wird im nächsten Schritt gefüllt
 
 ---
 
+# Metrikliste auswählen
+
+Bevor `cc-metric-collector` konfiguriert wird, lohnt sich eine kurze Bestandsaufnahme: Jeder Collector kann eine ganze Reihe von Messwerten liefern, schnell Dutzende Messwerte. Für viele dieser Werte ließen sich sinnvolle Nutzungsszenarien finden. Trotzdem ist ClusterCockpit in erster Linie ein *Job*-Monitoring und kein Ersatz für ein umfassendes Cluster-monitoring. Deshalb sollten ausschließlich Metriken erfasst werden, die tatsächlich genutzt werden.
+
+Bei mehreren Roll-outs kam auf die Frage „Welche Metriken wollt ihr erheben?“ häufig die Antwort „Den Standard“ oder „Was alle haben“. Der vorliegende Guide greift genau diesen Standardumfang auf, weil er typische Betriebs- und Troubleshooting-Szenarien abdeckt. Wer über diesen Rahmen hinausgehen möchte, kann sich gezielt mit dem offiziellen Repository beschäftigen und dort prüfen, welche Collectoren zu den eigenen Anforderungen passen: [collectors/README.md](https://github.com/ClusterCockpit/cc-metric-collector/blob/main/collectors/README.md).
+
+---
+
 ## Nächste Schritte
 
 Für den weiteren Verlauf stehen zwei Wege bereit:
