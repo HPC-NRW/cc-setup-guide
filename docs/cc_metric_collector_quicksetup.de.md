@@ -330,7 +330,7 @@ Folgende Anpassungen sind für eine eigene Konfiguration nötig:
 }
 ```
 
-> **Achtung (Stand 16.10.2025):** `change_unit_prefix` und `drop_messages_if` greifen aktuell noch auf die ursprünglichen Metriknamen zu – also bevor `rename_messages` angewendet wurde. Dieses Verhalten ist nicht gewünscht und wird vom Entwicklerteam korrigiert. Nach dem nächsten Update müssen sowohl die Prefix-Anpassungen als auch die Filter auf die bereits umbenannten Namen zeigen.
+> **Achtung (Stand 16.10.2025):** `change_unit_prefix` und `drop_messages_if` greifen aktuell noch auf die ursprünglichen Metriknamen zu, also bevor `rename_messages` angewendet wurde. Dieses Verhalten ist nicht gewünscht und wird vom Entwicklerteam korrigiert. Nach dem nächsten Update müssen sowohl die Prefix-Anpassungen als auch die Filter auf die bereits umbenannten Namen zeigen.
 
 ### Erklärung der wichtigsten Verarbeitungsschritte
 
