@@ -157,7 +157,7 @@ Die folgende Konfiguration basiert auf dem Elysium-Cluster der RUB und deckt typ
             "calc": "1.0E-09*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0/time",
             "name": "mem_read",
             "publish": false,
-            "type": "hwthread"
+            "type": "socket"
           }
         ]
       },
@@ -181,7 +181,7 @@ Die folgende Konfiguration basiert auf dem Elysium-Cluster der RUB und deckt typ
             "calc": "1.0E-09*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0/time",
             "name": "mem_write",
             "publish": false,
-            "type": "hwthread"
+            "type": "socket"
           }
         ]
       }
