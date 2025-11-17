@@ -434,6 +434,44 @@ Scope: `accelerator`
 }
 ```
 
+<details>
+<summary><strong>customcmd: Eigene Skripte einbinden</strong></summary>
+
+Wenn kein dedizierter Collector existiert, kann `customcmd` ein beliebiges Skript starten und dessen Ausgabe als Metrik übernehmen. So lassen sich individuelle Sensoren oder Spezialfälle unkompliziert einbinden. Das Skript muss lediglich ausführbar sein und die Ausgabe im passenden Format liefern. Das folgende Beispiel liest die Gesamtleistungsaufnahme eines Knotens über `ipmi-sensors` aus und sendet sie im InfluxDB Line Protocol als `node_total_power` weiter:
+
+```bash
+#!/bin/bash
+# Script to extract the overall node power consumption from ipmi-sensors output.
+# It searches for "NODE_PWR" first, and if not found, then for "SYS_POWER".
+# The extracted value is output in InfluxDB Line Protocol format:
+#   Measurement: node_total_power
+#   Tags: cluster, hostname, type, unit
+#   Field: value
+#   Timestamp: current time in nanoseconds
+
+output=$(sudo /usr/sbin/ipmi-sensors --comma-separated-output)
+
+# Search for "NODE_PWR" and extract the fourth field (reading)
+value=$(echo "$output" | awk -F, '$2 == "NODE_PWR" {print $4; exit}')
+
+# If "NODE_PWR" is not found, search for "SYS_POWER"
+if [ -z "$value" ]; then
+  value=$(echo "$output" | awk -F, '$2 ~ /SYS_POWER/ {print $4; exit}')
+fi
+
+# Exit with an error if no valid power metric is found
+if [ -z "$value" ]; then
+  echo "No valid power metric found" >&2
+  exit 1
+fi
+
+host=$(hostname)
+timestamp=$(date +%s%N)
+
+echo "node_total_power,cluster=elysium,hostname=${host},type=node,unit=W value=${value} ${timestamp}"
+```
+</details>
+
 ---
 <details>
 <summary><strong>bis hierher erstellte collectors.json</strong></summary>
