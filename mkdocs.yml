@@ -71,16 +71,11 @@ plugins:
                     - Step-by-step Additional Metrics: more_metrics.md
                 - LIKWID Metrics: likwid_metrics.md
                 - Receive & Display Metrics: metric_receive_display.md
-            - Slurm Integration:
-                - Install cc-slurm-adapter: slurm_integration.md
-            - Advanced Topics:
-                - Add New Metric: advanced.md#new_metric
-                - Custom Commands (customcmd): advanced.md#customcmd
-                - receivers.json: advanced.md#receivers
-                - sinks.json: advanced.md#sinks
+            - Slurm:
+                - cc-slurm-adapter: slurm.md
+                - cc-slurm-sync: slurm.md
             - Operation & Troubleshooting: operation.md
             - FAQ: faq.md
-            - Scripts: scripts.md
         - locale: de
           name: Deutsch
           build: true
@@ -99,16 +94,11 @@ plugins:
                     - Schritt-für-Schritt Weitere Metriken: more_metrics.md
                 - LIKWID Metriken: likwid_metrics.md
                 - Metriken empfangen & anzeigen: metric_receive_display.md
-            - Slurm-Integration:
-                - cc-slurm-adapter installieren: slurm_integration.md
-            - Erweiterte Themen:
-                - Neue Metrik hinzufügen: advanced.md#new_metric
-                - Custom Commands (customcmd): advanced.md#customcmd
-                - receivers.json: advanced.md#receivers
-                - sinks.json: advanced.md#sinks
-            - Betrieb & Troubleshooting: operation.md
+            - Slurm:
+                - cc-slurm-adapter: slurm_adapter.md
+                - cc-slurm-sync: slurm_sync.md
+            - Produktivbetrieb: operation.md
             - FAQ: faq.md
-            - Skripte: scripts.md
   - minify:
       minify_html: true
   - redirects

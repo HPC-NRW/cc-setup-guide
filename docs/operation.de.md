@@ -1,6 +1,3 @@
-# WiP
-## Betrieb & Troubleshooting
-
 ### Umstellen von `cc-backend` auf Produktivbetrieb
 
 #### Verwendung von nginx
