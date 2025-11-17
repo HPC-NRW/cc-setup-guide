@@ -1,5 +1,9 @@
 # Schritt-für-Schritt: Weitere Metriken
 
+!!! info "Schritt-für-Schritt · Teil 2/2"
+    Dieses Kapitel baut direkt auf [Schritt-für-Schritt: Erste Metrik](metrics.de.md) auf.  
+    Arbeiten Sie zuerst Teil 1 durch, damit alle Basisdateien und Umbenennungen vorhanden sind.
+
 Dies ist der zweite Teil der Schritt-für-Schritt-Reihe und baut auf der ersten Metrik (`cpu_load`) auf.  
 Eine Übersicht über alle verfügbaren Collectoren gibt es unter https://github.com/ClusterCockpit/cc-metric-collector/tree/main/collectors
 

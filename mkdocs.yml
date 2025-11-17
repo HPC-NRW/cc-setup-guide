@@ -65,11 +65,12 @@ plugins:
             - Create First Cluster & Define Subcluster: cluster_setup.md
             - Metrics and Collectors:
                 - Set Up cc-metric-collector: cc_metric_collector_setup.md
-                - Step-by-step First Metric: metrics.md
-                - Step-by-step Additional Metrics: more_metrics.md
                 - Quick Setup (Fast Track): cc_metric_collector_quicksetup.md
-                - Collectors Overview: collectors.md
+                - Step-by-step Guides:
+                    - Step-by-step First Metric: metrics.md
+                    - Step-by-step Additional Metrics: more_metrics.md
                 - LIKWID Metrics: likwid_metrics.md
+                - Receive & Display Metrics: metric_receive_display.md
             - Slurm Integration:
                 - Install cc-slurm-adapter: slurm_integration.md
             - Advanced Topics:
@@ -92,11 +93,12 @@ plugins:
                - Ersten Cluster anlegen & Subcluster definieren: cluster_setup.md
             - Metriken und Collectoren:
                 - cc-metric-collector einrichten: cc_metric_collector_setup.md
-                - Schritt-für-Schritt Erste Metrik: metrics.md
-                - Schritt-für-Schritt Weitere Metriken: more_metrics.md
                 - Quick Setup (Schnellstart): cc_metric_collector_quicksetup.md
-                - Collector-Übersicht: collectors.md
+                - Schritt-für-Schritt Anleitungen:
+                    - Schritt-für-Schritt Erste Metrik: metrics.md
+                    - Schritt-für-Schritt Weitere Metriken: more_metrics.md
                 - LIKWID Metriken: likwid_metrics.md
+                - Metriken empfangen & anzeigen: metric_receive_display.md
             - Slurm-Integration:
                 - cc-slurm-adapter installieren: slurm_integration.md
             - Erweiterte Themen:

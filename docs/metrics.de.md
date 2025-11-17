@@ -1,5 +1,9 @@
 # Schritt-für-Schritt: Erste Metrik
 
+!!! info "Schritt-für-Schritt · Teil 1/2"
+    Dieses Kapitel eröffnet die zweiteilige Schritt-für-Schritt-Reihe nach dem [cc-metric-collector Setup](cc_metric_collector_setup.de.md).  
+    Im Anschluss geht es mit [Schritt-für-Schritt: Weitere Metriken](more_metrics.de.md) weiter.
+
 Dieser Abschnitt ist Teil der Schritt-für-Schritt-Anleitung nach dem Setup des `cc-metric-collector`.  
 Um Metriken hinzuzufügen, werden immer drei Schritte benötigt:
 1. Metrik mit `cc-metric-collector` erheben.
