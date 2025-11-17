@@ -1,14 +1,13 @@
-# Subcluster-Konfiguration und LIKWID-Installation
+# Subcluster configuration and LIKWID installation
 
-Nach der Grundinstallation von ClusterCockpit muss die Hardware-Topologie des Clusters erfasst und als Subcluster hinterlegt werden.  
-Die Topologie wird von `likwid-topology` erfasst und zusammen mit ein Performance Metriken (Memory-Bandwith und FLOPS) über das Skript `generate-subcluster.pl` in das passende Format für die `cluster.json` gebracht.
+After the basic ClusterCockpit installation you still have to describe the cluster hardware topology and store it as subclusters.  
+`likwid-topology` collects the topology and, together with performance metrics (memory bandwidth and FLOPS), the `generate-subcluster.pl` script converts it into the format required by `cluster.json`.
 
 ---
 
-## 1. Installation von LIKWID
+## 1. Install LIKWID
 
-Die Installation erfolgt  über `git`.
-Vor dem Ausführen ist die Umgebungsvariable `PREFIX` auf das gewünschte Installationsziel zu setzen.
+Install LIKWID via `git`. Set the `PREFIX` environment variable to the desired installation path before running `make`.
 
 ```bash
 git clone https://github.com/RRZE-HPC/likwid
@@ -17,32 +16,33 @@ PREFIX="/cluster/software/likwid" make
 PREFIX="/cluster/software/likwid" make install
 ```
 
-Nach der Installation sollte `$PREFIX/bin` dem `PATH` hinzugefügt werden:
+Add `$PREFIX/bin` to `PATH` afterwards:
 
 ```bash
 export PATH=/cluster/software/likwid/bin:$PATH
 ```
 
-oder dauerhaft via Shell-Profile/Moduldatei.
+Or add it permanently via your shell profile or a module file.
 
 ---
 
-## 2. Subcluster-Erkennung mit LIKWID
+## 2. Detect subclusters with LIKWID
 
-Nach der Installation von LIKWID kann die Hardware-Topologie jedes Knotentyps mit dem Skript [generate-subcluster.pl](https://raw.githubusercontent.com/ClusterCockpit/cc-backend/refs/heads/master/configs/generate-subcluster.pl) automatisch erkannt werden. Diese wird zur `cluster.json` hinzugefügt.
-Das Skript wird **auf einem idle Knoten jedes Typs** ausgeführt.
+After installing LIKWID you can automatically detect the hardware topology of each node type with [generate-subcluster.pl](https://raw.githubusercontent.com/ClusterCockpit/cc-backend/refs/heads/master/configs/generate-subcluster.pl). The script creates JSON snippets that can be pasted into `cluster.json`.  
+Run it on **an idle node for every hardware type**.
 
-**Voraussetzungen:**
+**Requirements**
 
-* Der LIKWID-Binärpfad (`$PREFIX/bin`) ist im `PATH` verfügbar
-* Perl und die üblichen Systemtools sind installiert
+* LIKWID binaries (`$PREFIX/bin`) must be on `PATH`
+* Perl and common system tools need to be installed
 
 ```bash
 export PATH=/cluster/software/likwid/bin:$PATH
 ./generate-subcluster.pl
 ```
 
-Man erhält folgende Ausgabe:
+Sample output:
+
 ```bash
 {
       "name": "<FILL IN>",
@@ -91,18 +91,18 @@ Man erhält folgende Ausgabe:
           "core": [
           [0],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27],[28],[29],[30],[31],[32],[33],[34],[35],[36],[37],[38],[39],[40],[41],[42],[43],[44],[45],[46],[47]
           ]
-          
+
       }
 }
 ```
 
-Es muss noch der Name des Subclusters und die Noderange (z.B. `cpu[001-100]`) ergänzt werden.
+You still have to fill in the subcluster name and node range (e.g. `cpu[001-100]`).
 
-Für jeden Knotentyp mit unterschiedlicher Topologie (verschiedene CPU-Typen, anderes Memory Layout) muss das Skript einzeln ausgeführt werden. Die Nodes sollten `idle` sein, damit die Werte für `flopRate` und `memoryBandwith` richtig gemessen werden können.
+Run the script separately for every node type with a different topology (CPU type, memory layout, …). The nodes should be `idle` so that the measured `flopRate` and `memoryBandwidth` values are accurate.
 
-Alle Subcluster werden in der `cluster.json` unter `SubClusters` eingetragen und sind nach restart von `cc-backend` im Webinterface unter `Status` und `Nodes` sichtbar.
+Store each subcluster inside `cluster.json` under `subClusters`. After restarting `cc-backend` they appear in the web UI under `Status` and `Nodes`.
 
-Für Knoten mit `GPUs` oder anderen Beschleunigern wird hinter dem Key `core` noch ein weiterer Key mit den `PCI-IDs`, wie man sie aus `nvidia-smi` erhält, ergänzt:
+For GPU or accelerator nodes add an `accelerators` key containing their PCI IDs (as shown by `nvidia-smi`) below `core`:
 
 ```json
 "accelerators": [
@@ -111,53 +111,19 @@ Für Knoten mit `GPUs` oder anderen Beschleunigern wird hinter dem Key `core` no
     "type": "Nvidia GPU",
     "model": "Nvidia H100"
   },
-  {
-    "id": "00000000:2F:00.0",
-    "type": "Nvidia GPU",
-    "model": "Nvidia H100"
-  },
-  {
-    "id": "00000000:46:00.0",
-    "type": "Nvidia GPU",
-    "model": "Nvidia H100"
-  },
-  {
-    "id": "00000000:54:00.0",
-    "type": "Nvidia GPU",
-    "model": "Nvidia H100"
-  },
-  {
-    "id": "00000000:A6:00.0",
-    "type": "Nvidia GPU",
-    "model": "Nvidia H100"
-  },
-  {
-    "id": "00000000:AF:00.0",
-    "type": "Nvidia GPU",
-    "model": "Nvidia H100"
-  },
-  {
-    "id": "00000000:C6:00.0",
-    "type": "Nvidia GPU",
-    "model": "Nvidia H100"
-  },
-  {
-    "id": "00000000:CF:00.0",
-    "type": "Nvidia GPU",
-    "model": "Nvidia H100"
-  }
+  ...
 ]
 ```
 
-**Tipp:**
-Nach Hinzufügen der `Subcluster` kann man mit `jq < cluster.json` auf korrekte Syntax überprüfen.
+**Tip:**  
+Use `jq < cluster.json` to validate the file after adding the subclusters.
 
 ---
 
 <details>
-<summary><strong>Beispiel: vollständige cluster.json (RUB)</strong></summary>
+<summary><strong>Example: complete cluster.json (RUB)</strong></summary>
 
-Eine vollständige Subclusterkonfiguration mit fünf Knotentypen, davon drei Varianten mit unterschiedlichen GPUs, kann beispielsweise so aussehen:
+A fully populated configuration with five node types—three of them GPU variants—can look like this:
 
 ```json
 {
@@ -545,8 +511,8 @@ Eine vollständige Subclusterkonfiguration mit fünf Knotentypen, davon drei Var
     ]
 }
 
+
 ```
 
 </details>
 
-Nach Abschluss dieses Schritts ist die Subcluster-Topologie hinterlegt und im nächsten Schritt beschäftigen wir uns mit dem [cc-metric-collector](cc_metric_collector_setup.de.md).

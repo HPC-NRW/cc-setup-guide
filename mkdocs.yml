@@ -59,10 +59,11 @@ plugins:
           default: true
           nav:
             - Introduction: index.md
-            - Server Preparation: system_preparation.md
-            - Monitoring Server: monitoringserver.md
-            - Webinterface: webinterface.md
-            - Create First Cluster & Define Subcluster: cluster_setup.md
+            - Monitoring Server:
+               - Server Preparation: system_preparation.md
+               - Install Server Components: monitoringserver.md
+               - Webinterface: webinterface.md
+               - Create First Cluster & Define Subcluster: cluster_setup.md
             - Metrics and Collectors:
                 - Set Up cc-metric-collector: cc_metric_collector_setup.md
                 - Quick Setup (Fast Track): cc_metric_collector_quicksetup.md
@@ -72,8 +73,8 @@ plugins:
                 - LIKWID Metrics: likwid_metrics.md
                 - Receive & Display Metrics: metric_receive_display.md
             - Slurm:
-                - cc-slurm-adapter: slurm.md
-                - cc-slurm-sync: slurm.md
+                - cc-slurm-adapter: slurm_adapter.md
+                - cc-slurm-sync: slurm_sync.md
             - Operation & Troubleshooting: operation.md
             - FAQ: faq.md
         - locale: de
