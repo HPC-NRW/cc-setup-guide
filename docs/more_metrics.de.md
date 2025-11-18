@@ -426,7 +426,7 @@ Scope: `accelerator`
   "nv_mem_util": "acc_mem_util"
 },
 "drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out', 'lustre_read_bw', 'lustre_write_bw', 'lustre_open', 'lustre_close', 'lustre_statfs', 'open_diff', 'close_diff', 'nfsio_nread', 'nfsio_nwrite', 'acc_utilization', 'acc_mem_used', 'acc_power', 'acc_mem_util'])",
+  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out', 'lustre_read_bw', 'lustre_write_bw', 'lustre_open', 'lustre_close', 'lustre_statfs', 'open_diff', 'close_diff', 'nfsio_nread', 'nfsio_nwrite', 'acc_utilization', 'acc_mem_used', 'acc_power', 'acc_mem_util', 'nv_compute_processes'])",
   "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
 ],
 "change_unit_prefix": {
@@ -573,7 +573,7 @@ echo "node_total_power,cluster=elysium,hostname=${host},type=node,unit=W value=$
           "numastats_other_node_rate": "numastats_other_node"
         },
         "drop_messages_if": [
-          "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out', 'lustre_read_bw', 'lustre_write_bw', 'lustre_open', 'lustre_close', 'lustre_statfs', 'open_diff', 'close_diff', 'nfsio_nread', 'nfsio_nwrite', 'acc_utilization', 'acc_mem_used', 'acc_power', 'acc_mem_util'])",
+          "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out', 'lustre_read_bw', 'lustre_write_bw', 'lustre_open', 'lustre_close', 'lustre_statfs', 'open_diff', 'close_diff', 'nfsio_nread', 'nfsio_nwrite', 'acc_utilization', 'acc_mem_used', 'acc_power', 'acc_mem_util', 'nv_compute_processes'])",
           "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
         ],
         "change_unit_prefix": {
