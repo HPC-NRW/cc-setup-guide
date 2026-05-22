@@ -108,7 +108,6 @@ Der Collector `slurm_cgroup` liest die von Slurm angelegten cgroups aus, ermitte
 `collectors.json`:
 ```json
 "slurm_cgroup": {
-  "scope": "hwthread"
 }
 ```
 
