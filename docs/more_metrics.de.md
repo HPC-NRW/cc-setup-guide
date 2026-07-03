@@ -181,7 +181,7 @@ disk_free,cluster=testcluster,device=/dev/nvme0n1p2,hostname=cpu001,type=node,un
 disk_free,cluster=testcluster,device=/dev/nvme0n1p4,hostname=cpu001,type=node,unit=GB value=869u 1757426394108546859
 ```
 
-Die beiden Nachrichten unterscheiden sich nur durch das `device`-Tag unterscheiden. Die Werte werden vom `cc-metric-store` nicht aufsummiert. Es wird nur der Wert der ersten Nachricht verarbeitet. Da es sich um das Dateisystem "`/`" handelt, kann es mit `exclude_mounts` nicht herausgefiltert werden.
+Die beiden Nachrichten unterscheiden sich nur durch das `device`-Tag. Die Werte werden von `cc-backend` nicht aufsummiert. Es wird nur der Wert der ersten Nachricht verarbeitet. Da es sich um das Dateisystem "`/`" handelt, kann es mit `exclude_mounts` nicht herausgefiltert werden.
 Die Filterung erfolgt über den `messageProcessor`:
 
 ```json

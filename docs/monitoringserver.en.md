@@ -1,4 +1,4 @@
-# Install server components (cc-backend & cc-metric-store)
+# Install server components (cc-backend 1.5.3)
 
 This chapter shows how to install ClusterCockpit on the dedicated monitoring server.  
 All steps can either be automated via the provided script or executed manually.
@@ -28,28 +28,22 @@ cc-setup-guide/
 │   ├── cc-installation.sh
 │   └── templates/
 │       ├── cc-backend.json.template
-│       ├── cc-metric-store.config.json.template
 │       ├── cluster.json.template
-│       ├── clustercockpit.service.template
-│       └── cc-metric-store.service.template
+│       └── clustercockpit.service.template
 ```
 
 The script expects the template files to reside in `scripts/templates/`.
 
 > **Note about metric-store runtime parameters**  
-> The generated `cc-metric-store/config.json` defines `retention-in-memory` as the time window in which metric data stays in RAM. Configure it to be at least as large as the maximum job runtime so that running jobs do not end up with gaps in their series.  
-> The parameters `checkpoints.interval`, `checkpoints.restore`, and `archive.interval` are closely tied to job durations:  
-> - `checkpoints.interval` is usually much shorter than `retention-in-memory` so that checkpoints are written regularly.  
-> - `checkpoints.restore` must be at least as large as `retention-in-memory` so that all active jobs can be restored after a restart.  
-> - `archive.interval` should be greater than or equal to `retention-in-memory` to make sure data gets archived before being evicted.  
-> Pick the exact values based on maximum job length and available resources.
+> The generated `cc-backend/config.json` defines `metric-store.retention-in-memory` as the time window in which metric data stays in RAM. Configure it to be at least as large as the maximum job runtime so that running jobs do not end up with gaps in their series.  
+> Checkpoints and cleanup are configured in the same `metric-store` section. Pick the exact values based on maximum job length and available resources.
 
 ---
 
 **Clone the repository**
 
 ```bash
-git clone https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb.git cc-setup-guide
+git clone https://github.com/hpc-nrw/cc-setup-guide.git
 cd cc-setup-guide
 ```
 
@@ -115,11 +109,6 @@ wget -O cc-backend.tar.gz "$CC_BACKEND_URL"
 tar -xzf cc-backend.tar.gz -C cc-backend --strip-components=1
 rm cc-backend.tar.gz
 
-# Download and extract cc-metric-store
-CC_METRIC_STORE_URL=$(curl -s https://api.github.com/repos/ClusterCockpit/cc-metric-store/releases/latest | grep "browser_download_url.*Linux_x86_64.tar.gz" | cut -d '"' -f 4)
-wget -O cc-metric-store.tar.gz "$CC_METRIC_STORE_URL"
-tar -xzf cc-metric-store.tar.gz -C cc-metric-store --strip-components=1
-rm cc-metric-store.tar.gz
 ```
 
 ---
@@ -147,7 +136,7 @@ cp templates/cc-backend.json.template ./config.json
 sed -i "s/__CLUSTER_NAME__/$CLUSTER_NAME/g" ./config.json
 ```
 
-Do the same for `cluster.json` and the metric-store config.
+Do the same for `cluster.json`.
 
 ---
 
@@ -248,7 +237,7 @@ EOF
 ```bash
 chmod +x ./cc-backend
 ./cc-backend -init
-echo 2 > ./var/job-archive/version.txt
+echo 3 > ./var/job-archive/version.txt
 ./cc-backend -migrate-db
 ```
 
@@ -284,7 +273,7 @@ echo "$API_PASS" > apiuser_password.txt
 ```
 
 > **Note:** In the generated `config.json` the `jwts.max-age` entry is empty by default, which means API tokens never expire. Set a duration there (for example `8760h` for one year) if you want to enforce an expiry. Afterwards you must generate a new token.  
-> It also makes sense to restrict `apiAllowedIPs` to trusted sources. The default configuration accepts every address (`"*"`). Only individual IP addresses are supported—no CIDR notation for subnets.
+> It also makes sense to restrict `api-allowed-ips` to trusted sources. The default configuration accepts every address (`"*"`). Only individual IP addresses are supported; CIDR notation for subnets is not supported.
 
 ---
 
@@ -295,8 +284,6 @@ Generate the systemd unit files based on the templates:
 ```bash
 cp templates/clustercockpit.service.template "$INSTALL_DIR/clustercockpit.service"
 sed -i "s@__INSTALL_DIR__@$INSTALL_DIR@g" "$INSTALL_DIR/clustercockpit.service"
-cp templates/cc-metric-store.service.template "$INSTALL_DIR/cc-metric-store.service"
-sed -i "s@__INSTALL_DIR__@$INSTALL_DIR@g" "$INSTALL_DIR/cc-metric-store.service"
 ```
 
 Copy the units to `/etc/systemd/system/` and enable them.
@@ -310,17 +297,14 @@ Either start the services manually or via systemd.
 ```bash
 systemctl daemon-reload
 systemctl enable clustercockpit.service
-systemctl enable cc-metric-store.service
 
 systemctl start clustercockpit.service
-systemctl start cc-metric-store.service
 ```
 
 **Check their status**
 
 ```bash
 systemctl status clustercockpit.service
-systemctl status cc-metric-store.service
 ```
 
 ---
@@ -329,14 +313,14 @@ systemctl status cc-metric-store.service
 
 After completing the steps above the server components are ready:
 
-- **Services active:** `cc-backend` (web/API) and `cc-metric-store` run and can be controlled via systemd.
+- **Service active:** `cc-backend` (web/API and integrated metric store) runs and can be controlled via systemd.
 - **Credentials:** Admin password, API password, and API token were created.  
     - `$INSTALL_DIR/cc-backend/admin_password.txt`  
     - `$INSTALL_DIR/cc-backend/apiuser_password.txt`  
     - `$INSTALL_DIR/cc-backend/apikey.txt`
 - **Configuration & secrets:**  
     - Backend: `$INSTALL_DIR/cc-backend/config.json` and `$INSTALL_DIR/cc-backend/.env`  
-    - Metric store: `$INSTALL_DIR/cc-metric-store/config.json`
+    - Integrated metric store: `metric-store` section in `$INSTALL_DIR/cc-backend/config.json`
 - **Cluster configuration:**  
     - File: `$INSTALL_DIR/cc-backend/var/job-archive/$CLUSTER_NAME/cluster.json` (subclusters, metrics, thresholds, …).
 - **Data & directory layout:**  
@@ -347,4 +331,3 @@ At this point `cluster.json` only contains the **cluster name** and an **example
 
 - [Web interface](webinterface.md)
 - [Metrics & collectors](metrics.md)
-

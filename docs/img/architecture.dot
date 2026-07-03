@@ -23,15 +23,12 @@ digraph G {
     color=black;
     node [shape=box, style=filled, fillcolor=white, fontname="Helvetica,Arial,sans-serif"];
 
-    store [label="cc-metric-store", shape=cylinder];
-    backend [label="cc-backend"];
+    backend [label="cc-backend\nWeb/API + metric-store"];
   }
 
   // --- Kanten ---
-  nodeA -> store;
-  nodeB -> store;
-  nodeC -> store;
+  nodeA -> backend [label="/api/write"];
+  nodeB -> backend [label="/api/write"];
+  nodeC -> backend [label="/api/write"];
   mgm   -> backend;
-  store -> backend;
-  backend -> store;
 }

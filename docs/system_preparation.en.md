@@ -10,7 +10,7 @@ The following sections describe the system roles together with recommended hardw
 You need the following systems:
 
 - **Monitoring server**  
-  (Dedicated machine that runs `cc-backend` and `cc-metric-store`)
+  (Dedicated machine that runs `cc-backend`)
 - **Compute nodes**  
   (Run `cc-metric-collector` and LIKWID)
 - **SLURM management node**  
@@ -39,7 +39,7 @@ LABEL=opt-btrfs  /opt  btrfs  rw,noatime,compress=zstd:8,autodefrag  0 0
 **Important notes:**
 
 * Size the partition generously (see below).
-* **btrfs** is strongly recommended for the database (cc-metric-store) and the backend because ext4 performed considerably worse during testing.
+* **btrfs** is strongly recommended for the database, job archive, and backend metric-store data because ext4 performed considerably worse during testing.
 * Btrfs makes storage usage efficient and simplifies snapshots/backups.
 
 ### Estimating storage requirements
@@ -68,13 +68,12 @@ LABEL=opt-btrfs  /opt  btrfs  rw,noatime,compress=zstd:8,autodefrag  0 0
   * In production the web frontend should run on port `443` (HTTPS).
   * Port `443` must be reachable from the SLURM management node (cc-slurm-adapter).
 
-* **cc-metric-store:**
+* **cc-backend write API:**
 
-  * Listens on port `8081`.
-  * The port must be reachable from the compute nodes (or intermediate routing hosts if you relay traffic).
+  * Uses the same HTTPS endpoint as `cc-backend`, typically port `443`.
+  * This endpoint must be reachable from the compute nodes (or intermediate routing hosts if you relay traffic).
   * Configure corresponding firewall/routing rules.
 
 ---
 
 With these preparations in place the system is ready to install ClusterCockpit.
-

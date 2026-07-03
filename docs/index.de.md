@@ -1,9 +1,8 @@
-> warning "Work in Progress"
-    Dieser Guide befindet sich in aktiver Bearbeitung und kann sich jederzeit ändern.
-
 # Einführung
 
 Dieser Guide wurde im Rahmen des Projekts [HPC.NRW](https://hpc.dh.nrw) erstellt und nutzt Beispielkonfigurationen der [FAU Erlangen](https://github.com/ClusterCockpit/cc-examples/tree/main/nhr%40fau) und der Ruhr-Universität Bochum.
+
+Der Guide wird auf Best-effort-Basis aktuell gehalten. Bei Problemen, Fehlern oder Änderungswünschen können gerne [Issues im GitHub-Repository](https://github.com/hpc-nrw/cc-setup-guide/issues) eröffnet werden.
 
 ---
 
@@ -26,15 +25,12 @@ Hierfür wird neben anderen Metrikkollektoren auch [LIKWID](https://github.com/R
 ClusterCockpit besteht aus mehreren Komponenten, die miteinander kommunizieren und auf verschiedenen Systemen in der Cluster-Infrastruktur installiert werden:
 
 - **cc-backend:**  
-  Zentrale Serverkomponente mit Web-Frontend, API und Datenbankanbindung.  
-  Hier laufen Weboberfläche, Benutzerverwaltung und Konfigurationslogik.
-
-- **cc-metric-store:**  
-  performante Zeitreihen-Datenbank zur temporären Speicherung und schnellem Abrufen erfasster Metriken aus dem RAM.
+  Zentrale Serverkomponente mit Web-Frontend, API, Datenbankanbindung und integriertem Metric-Store.  
+  Hier laufen Weboberfläche, Benutzerverwaltung, Konfigurationslogik und die temporäre Zeitreihenhaltung.
 
 - **cc-metric-collector:**  
   Agent, der auf den Compute-Knoten installiert wird.  
-  Sammelt Messwerte zu CPU-Last, Speicher, Netzwerk, I/O, u.v.m. und sendet sie an den cc-metric-store.
+  Sammelt Messwerte zu CPU-Last, Speicher, Netzwerk, I/O, u.v.m. und sendet sie an die Write-API von `cc-backend`.
 
 - **cc-slurm-adapter:**  
   Komponente für die Integration von SLURM, damit Metadaten der Jobs (wie Benutzer, Projekt, Allocations) in ClusterCockpit dargestellt werden können.
@@ -45,7 +41,7 @@ ClusterCockpit besteht aus mehreren Komponenten, die miteinander kommunizieren u
 
 Eine übliche Installation besteht aus:
 
-- **dedizierter Monitoring-Server**, auf dem `cc-backend` und `cc-metric-store` betrieben werden.
+- **dedizierter Monitoring-Server**, auf dem `cc-backend` betrieben wird.
 - **Compute-Knoten**, die jeweils `cc-metric-collector` ausführen.
 - **SLURM-Management-Knoten**, auf dem zusätzlich der `cc-slurm-adapter` installiert wird.
 
@@ -79,7 +75,7 @@ Diese Anleitung richtet sich an Systemadministratoren, die ClusterCockpit in ein
 
 ## Wie ist diese Dokumentation aufgebaut?
 
-Diese Anleitung führt Schritt für Schritt durch den gesamten Prozess – von der Vorbereitung der Systeme, über die Installation und erste Inbetriebnahme, bis zu fortgeschrittener Konfiguration und Betrieb.  
+Diese Anleitung führt Schritt für Schritt durch den gesamten Prozess von der Vorbereitung der Systeme, über die Installation und erste Inbetriebnahme, bis zu fortgeschrittener Konfiguration und Betrieb.  
 Praktische Beispiele und Skripte helfen dabei, möglichst schnell zu einem funktionierenden Monitoring zu kommen.
 
 ---

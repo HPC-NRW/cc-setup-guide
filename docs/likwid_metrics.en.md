@@ -49,7 +49,21 @@ The output lists events and derived metrics. Example (Zen4 `MEMREAD`):
 {
   "events": {
     "DFC0": "DRAM_READS_LOCAL_CHANNEL_0",
-    ...
+    "DFC1": "DRAM_READS_LOCAL_CHANNEL_1",
+    "DFC10": "DRAM_READS_LOCAL_CHANNEL_10",
+    "DFC11": "DRAM_READS_LOCAL_CHANNEL_11",
+    "DFC2": "DRAM_READS_LOCAL_CHANNEL_2",
+    "DFC3": "DRAM_READS_LOCAL_CHANNEL_3",
+    "DFC4": "DRAM_READS_LOCAL_CHANNEL_4",
+    "DFC5": "DRAM_READS_LOCAL_CHANNEL_5",
+    "DFC6": "DRAM_READS_LOCAL_CHANNEL_6",
+    "DFC7": "DRAM_READS_LOCAL_CHANNEL_7",
+    "DFC8": "DRAM_READS_LOCAL_CHANNEL_8",
+    "DFC9": "DRAM_READS_LOCAL_CHANNEL_9",
+    "FIXC1": "ACTUAL_CPU_CLOCK",
+    "FIXC2": "MAX_CPU_CLOCK",
+    "PMC0": "RETIRED_INSTRUCTIONS",
+    "PMC1": "CPU_CLOCKS_UNHALTED"
   },
   "metrics": [
     {
@@ -58,7 +72,36 @@ The output lists events and derived metrics. Example (Zen4 `MEMREAD`):
       "publish": true,
       "type": "hwthread"
     },
-    ...
+    {
+      "calc": "FIXC1*inverseClock",
+      "name": "Runtime unhalted [s]",
+      "publish": true,
+      "type": "hwthread"
+    },
+    {
+      "calc": "1.E-06*(FIXC1/FIXC2)/inverseClock",
+      "name": "Clock [MHz]",
+      "publish": true,
+      "type": "hwthread"
+    },
+    {
+      "calc": "PMC1/PMC0",
+      "name": "CPI",
+      "publish": true,
+      "type": "hwthread"
+    },
+    {
+      "calc": "1.0E-06*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0/time",
+      "name": "Memory read bandwidth [MBytes/s]",
+      "publish": true,
+      "type": "socket"
+    },
+    {
+      "calc": "1.0E-09*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0",
+      "name": "Memory read data volume [GBytes]",
+      "publish": true,
+      "type": "socket"
+    }
   ]
 }
 ```
@@ -69,7 +112,21 @@ To obtain memory bandwidth you also need `MEMWRITE`:
 {
   "events": {
     "DFC0": "DRAM_WRITES_LOCAL_CHANNEL_0",
-    ...
+    "DFC1": "DRAM_WRITES_LOCAL_CHANNEL_1",
+    "DFC10": "DRAM_WRITES_LOCAL_CHANNEL_10",
+    "DFC11": "DRAM_WRITES_LOCAL_CHANNEL_11",
+    "DFC2": "DRAM_WRITES_LOCAL_CHANNEL_2",
+    "DFC3": "DRAM_WRITES_LOCAL_CHANNEL_3",
+    "DFC4": "DRAM_WRITES_LOCAL_CHANNEL_4",
+    "DFC5": "DRAM_WRITES_LOCAL_CHANNEL_5",
+    "DFC6": "DRAM_WRITES_LOCAL_CHANNEL_6",
+    "DFC7": "DRAM_WRITES_LOCAL_CHANNEL_7",
+    "DFC8": "DRAM_WRITES_LOCAL_CHANNEL_8",
+    "DFC9": "DRAM_WRITES_LOCAL_CHANNEL_9",
+    "FIXC1": "ACTUAL_CPU_CLOCK",
+    "FIXC2": "MAX_CPU_CLOCK",
+    "PMC0": "RETIRED_INSTRUCTIONS",
+    "PMC1": "CPU_CLOCKS_UNHALTED"
   },
   "metrics": [
     {
@@ -78,7 +135,36 @@ To obtain memory bandwidth you also need `MEMWRITE`:
       "publish": true,
       "type": "hwthread"
     },
-    ...
+    {
+      "calc": "FIXC1*inverseClock",
+      "name": "Runtime unhalted [s]",
+      "publish": true,
+      "type": "hwthread"
+    },
+    {
+      "calc": "1.E-06*(FIXC1/FIXC2)/inverseClock",
+      "name": "Clock [MHz]",
+      "publish": true,
+      "type": "hwthread"
+    },
+    {
+      "calc": "PMC1/PMC0",
+      "name": "CPI",
+      "publish": true,
+      "type": "hwthread"
+    },
+    {
+      "calc": "1.0E-06*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0/time",
+      "name": "Memory write bandwidth [MBytes/s]",
+      "publish": true,
+      "type": "socket"
+    },
+    {
+      "calc": "1.0E-09*(DFC0+DFC1+DFC2+DFC3+DFC4+DFC5+DFC6+DFC7+DFC8+DFC9+DFC10+DFC11)*64.0",
+      "name": "Memory write data volume [GBytes]",
+      "publish": true,
+      "type": "socket"
+    }
   ]
 }
 ```
@@ -89,7 +175,17 @@ In `collectors.json` focus on the required counters and the two metrics. For con
       {
         "events": {
           "DFC0": "DRAM_READS_LOCAL_CHANNEL_0",
-          ...
+          "DFC1": "DRAM_READS_LOCAL_CHANNEL_1",
+          "DFC10": "DRAM_READS_LOCAL_CHANNEL_10",
+          "DFC11": "DRAM_READS_LOCAL_CHANNEL_11",
+          "DFC2": "DRAM_READS_LOCAL_CHANNEL_2",
+          "DFC3": "DRAM_READS_LOCAL_CHANNEL_3",
+          "DFC4": "DRAM_READS_LOCAL_CHANNEL_4",
+          "DFC5": "DRAM_READS_LOCAL_CHANNEL_5",
+          "DFC6": "DRAM_READS_LOCAL_CHANNEL_6",
+          "DFC7": "DRAM_READS_LOCAL_CHANNEL_7",
+          "DFC8": "DRAM_READS_LOCAL_CHANNEL_8",
+          "DFC9": "DRAM_READS_LOCAL_CHANNEL_9"
         },
         "metrics": [
           {
@@ -103,7 +199,17 @@ In `collectors.json` focus on the required counters and the two metrics. For con
       {
         "events": {
           "DFC0": "DRAM_WRITES_LOCAL_CHANNEL_0",
-          ...
+          "DFC1": "DRAM_WRITES_LOCAL_CHANNEL_1",
+          "DFC10": "DRAM_WRITES_LOCAL_CHANNEL_10",
+          "DFC11": "DRAM_WRITES_LOCAL_CHANNEL_11",
+          "DFC2": "DRAM_WRITES_LOCAL_CHANNEL_2",
+          "DFC3": "DRAM_WRITES_LOCAL_CHANNEL_3",
+          "DFC4": "DRAM_WRITES_LOCAL_CHANNEL_4",
+          "DFC5": "DRAM_WRITES_LOCAL_CHANNEL_5",
+          "DFC6": "DRAM_WRITES_LOCAL_CHANNEL_6",
+          "DFC7": "DRAM_WRITES_LOCAL_CHANNEL_7",
+          "DFC8": "DRAM_WRITES_LOCAL_CHANNEL_8",
+          "DFC9": "DRAM_WRITES_LOCAL_CHANNEL_9"
         },
         "metrics": [
           {
@@ -138,7 +244,33 @@ For Intel Sapphire Rapids (`SPR MEM`) the script emits different counters (e.g. 
 {
   "events": {
     "FIXC0": "INSTR_RETIRED_ANY",
-    ...
+    "FIXC1": "CPU_CLK_UNHALTED_CORE",
+    "FIXC2": "CPU_CLK_UNHALTED_REF",
+    "FIXC3": "TOPDOWN_SLOTS",
+    "MBOX0C0": "CAS_COUNT_RD",
+    "MBOX0C1": "CAS_COUNT_WR",
+    "MBOX10C0": "CAS_COUNT_RD",
+    "MBOX10C1": "CAS_COUNT_WR",
+    "MBOX11C0": "CAS_COUNT_RD",
+    "MBOX11C1": "CAS_COUNT_WR",
+    "MBOX1C0": "CAS_COUNT_RD",
+    "MBOX1C1": "CAS_COUNT_WR",
+    "MBOX2C0": "CAS_COUNT_RD",
+    "MBOX2C1": "CAS_COUNT_WR",
+    "MBOX3C0": "CAS_COUNT_RD",
+    "MBOX3C1": "CAS_COUNT_WR",
+    "MBOX4C0": "CAS_COUNT_RD",
+    "MBOX4C1": "CAS_COUNT_WR",
+    "MBOX5C0": "CAS_COUNT_RD",
+    "MBOX5C1": "CAS_COUNT_WR",
+    "MBOX6C0": "CAS_COUNT_RD",
+    "MBOX6C1": "CAS_COUNT_WR",
+    "MBOX7C0": "CAS_COUNT_RD",
+    "MBOX7C1": "CAS_COUNT_WR",
+    "MBOX8C0": "CAS_COUNT_RD",
+    "MBOX8C1": "CAS_COUNT_WR",
+    "MBOX9C0": "CAS_COUNT_RD",
+    "MBOX9C1": "CAS_COUNT_WR"
   },
   "metrics": [
     {
@@ -147,7 +279,60 @@ For Intel Sapphire Rapids (`SPR MEM`) the script emits different counters (e.g. 
       "publish": true,
       "type": "hwthread"
     },
-    ...
+    {
+      "calc": "FIXC1*inverseClock",
+      "name": "Runtime unhalted [s]",
+      "publish": true,
+      "type": "hwthread"
+    },
+    {
+      "calc": "1.E-06*(FIXC1/FIXC2)/inverseClock",
+      "name": "Clock [MHz]",
+      "publish": true,
+      "type": "hwthread"
+    },
+    {
+      "calc": "FIXC1/FIXC0",
+      "name": "CPI",
+      "publish": true,
+      "type": "hwthread"
+    },
+    {
+      "calc": "1.0E-06*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX6C0+MBOX7C0+MBOX8C0+MBOX9C0+MBOX10C0+MBOX11C0)*64.0/time",
+      "name": "Memory read bandwidth [MBytes/s]",
+      "publish": true,
+      "type": "socket"
+    },
+    {
+      "calc": "1.0E-09*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX6C0+MBOX7C0+MBOX8C0+MBOX9C0+MBOX10C0+MBOX11C0)*64.0",
+      "name": "Memory read data volume [GBytes]",
+      "publish": true,
+      "type": "socket"
+    },
+    {
+      "calc": "1.0E-06*(MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1+MBOX6C1+MBOX7C1+MBOX8C1+MBOX9C1+MBOX10C1+MBOX11C1)*64.0/time",
+      "name": "Memory write bandwidth [MBytes/s]",
+      "publish": true,
+      "type": "socket"
+    },
+    {
+      "calc": "1.0E-09*(MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1+MBOX6C1+MBOX7C1+MBOX8C1+MBOX9C1+MBOX10C1+MBOX11C1)*64.0",
+      "name": "Memory write data volume [GBytes]",
+      "publish": true,
+      "type": "socket"
+    },
+    {
+      "calc": "1.0E-06*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX6C0+MBOX7C0+MBOX8C0+MBOX9C0+MBOX10C0+MBOX11C0+MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1+MBOX6C1+MBOX7C1+MBOX8C1+MBOX9C1+MBOX10C1+MBOX11C1)*64.0/time",
+      "name": "Memory bandwidth [MBytes/s]",
+      "publish": true,
+      "type": "socket"
+    },
+    {
+      "calc": "1.0E-09*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX6C0+MBOX7C0+MBOX8C0+MBOX9C0+MBOX10C0+MBOX11C0+MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1+MBOX6C1+MBOX7C1+MBOX8C1+MBOX9C1+MBOX10C1+MBOX11C1)*64.0",
+      "name": "Memory data volume [GBytes]",
+      "publish": true,
+      "type": "socket"
+    }
   ]
 }
 ```
@@ -158,11 +343,33 @@ Here it is easier to obtain memory bandwidth: simply drop unused counters/metric
 {
   "events": {
     "MBOX0C0": "CAS_COUNT_RD",
-    ...
+    "MBOX0C1": "CAS_COUNT_WR",
+    "MBOX10C0": "CAS_COUNT_RD",
+    "MBOX10C1": "CAS_COUNT_WR",
+    "MBOX11C0": "CAS_COUNT_RD",
+    "MBOX11C1": "CAS_COUNT_WR",
+    "MBOX1C0": "CAS_COUNT_RD",
+    "MBOX1C1": "CAS_COUNT_WR",
+    "MBOX2C0": "CAS_COUNT_RD",
+    "MBOX2C1": "CAS_COUNT_WR",
+    "MBOX3C0": "CAS_COUNT_RD",
+    "MBOX3C1": "CAS_COUNT_WR",
+    "MBOX4C0": "CAS_COUNT_RD",
+    "MBOX4C1": "CAS_COUNT_WR",
+    "MBOX5C0": "CAS_COUNT_RD",
+    "MBOX5C1": "CAS_COUNT_WR",
+    "MBOX6C0": "CAS_COUNT_RD",
+    "MBOX6C1": "CAS_COUNT_WR",
+    "MBOX7C0": "CAS_COUNT_RD",
+    "MBOX7C1": "CAS_COUNT_WR",
+    "MBOX8C0": "CAS_COUNT_RD",
+    "MBOX8C1": "CAS_COUNT_WR",
+    "MBOX9C0": "CAS_COUNT_RD",
+    "MBOX9C1": "CAS_COUNT_WR"
   },
   "metrics": [
     {
-      "calc": "1.0E-06*(MBOX0C0+MBOX1C0+...+MBOX11C1)*64.0/time",
+      "calc": "1.0E-06*(MBOX0C0+MBOX1C0+MBOX2C0+MBOX3C0+MBOX4C0+MBOX5C0+MBOX6C0+MBOX7C0+MBOX8C0+MBOX9C0+MBOX10C0+MBOX11C0+MBOX0C1+MBOX1C1+MBOX2C1+MBOX3C1+MBOX4C1+MBOX5C1+MBOX6C1+MBOX7C1+MBOX8C1+MBOX9C1+MBOX10C1+MBOX11C1)*64.0/time",
       "name": "mem_bw",
       "publish": true,
       "type": "socket"
@@ -179,4 +386,3 @@ Other frequently used LIKWID metrics:
 - `clock`
 - `core_power`
 - `ipc` (many performance groups expose `CPI`, i.e., the reciprocal)
-

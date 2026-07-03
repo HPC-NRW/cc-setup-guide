@@ -202,7 +202,7 @@ disk_free,cluster=testcluster,device=/dev/nvme0n1p2,hostname=cpu001,type=node,un
 disk_free,cluster=testcluster,device=/dev/nvme0n1p4,hostname=cpu001,type=node,unit=GB value=869u 1757426394108546859
 ```
 
-They only differ by the `device` tag. The metric store does not aggregate the values—only the first message counts. Because this is the root filesystem (`/`) we cannot exclude it via `exclude_mounts`.  
+They only differ by the `device` tag. `cc-backend` does not aggregate the values; only the first message counts. Because this is the root filesystem (`/`) we cannot exclude it via `exclude_mounts`.  
 Filter via the message processor:
 
 ```json
@@ -612,4 +612,3 @@ echo "node_total_power,cluster=elysium,hostname=${host},type=node,unit=W value=$
 </details>
 
 Next up: [LIKWID metrics](likwid_metrics.md).
-

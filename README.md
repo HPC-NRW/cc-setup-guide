@@ -4,6 +4,8 @@
 
 This repository contains the documentation for installing and configuring ClusterCockpit on an HPC system. Follow the instructions below to clone the repository and serve the documentation website locally using MkDocs.
 
+The guide is kept up to date on a best-effort basis. For problems, corrections, or change requests, please open an issue at <https://github.com/hpc-nrw/cc-setup-guide/issues>.
+
 #### Prerequisites
 
 Make sure the following software is available:
@@ -36,7 +38,7 @@ pip3 --version
 #### Clone & Setup
 
 ```bash
-git clone https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb.git cc-setup-guide
+git clone https://github.com/hpc-nrw/cc-setup-guide.git
 cd cc-setup-guide
 
 # (optional but recommended)

@@ -17,7 +17,7 @@ The build directory contains a couple of files that control the behavior:
 - `config.json`: Paths to other files, sampling interval.
 - `collectors.json`: Which collectors run and how they are configured.
 - `router.json`: Transformations (rename, filter, change units, …).
-- `sinks.json`: Destinations (e.g., `cc-metric-store`).
+- `sinks.json`: Destinations (e.g., the `cc-backend` write API).
 - `receivers.json`: Optional forwarding of incoming data (keep empty for the base setup).
 
 ## Basic configuration
@@ -35,15 +35,15 @@ Leave `receivers.json` empty (`{}`) and add a `stdout` output in `sinks.json`:
 ```
 
 Save it as `sinks_stdout.json` and create `config_stdout.json`, which is identical to `config.json` except that it references `sinks_stdout.json`.  
-Now you can run `./cc-metric-collector -config ./config_stdout.json [-once]` to inspect the metrics without sending anything to the `cc-metric-store`.
+Now you can run `./cc-metric-collector -config ./config_stdout.json [-once]` to inspect the metrics without sending anything to `cc-backend`.
 
-For production runs, point `sinks.json` to the metric store (replace the placeholders):
+For production runs, point `sinks.json` to the `cc-backend` write API (replace the placeholders):
 
 ```json
 {
-  "cc-metric-store": {
+  "cc-backend": {
     "type": "http",
-    "url": "http://<monitoring-server>:8081/api/write/?cluster=__CLUSTER__",
+    "url": "https://<monitoring-server>/api/write/?cluster=__CLUSTER__",
     "jwt": "__APIKEY__",
     "precision": "s",
     "meta_as_tags": ["unit"],
@@ -92,4 +92,3 @@ You can proceed in two different ways:
 
 - **Step-by-step tutorial:** Start with [Set up the first metric](metrics.md) and then continue with [Additional metrics & thresholds](more_metrics.md). Great if you want to understand the collector/router/store concept in depth.
 - **Quick setup:** Follow the [cc-metric-collector fast track](cc_metric_collector_quicksetup.md) for a compact workflow that uses ready-made examples.
-

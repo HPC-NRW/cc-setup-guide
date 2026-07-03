@@ -11,9 +11,9 @@
 - **Ursache/Lösung:** Das JWT (API-Key) ist abgelaufen; neuen Key generieren und in allen Komponenten aktualisieren, die ihn verwenden.
 
 ## Metric Collector gibt Metriken nicht aus
-- **Symptom:** Erwartete Metriken fehlen in der Ausgabe oder im Metric Store.
+- **Symptom:** Erwartete Metriken fehlen in der Ausgabe oder kommen nicht bei `cc-backend` an.
 - **Konfigurationscheck:** In `collectors.json` sicherstellen, dass der Collector aktiviert ist. In `router.json` prüfen, ob die Metrik umbenannt oder gefiltert wird. Falls es sich um eine `diff`- oder `derived`-Metrik handelt: der Collector darf nicht mit `-once` gestartet worden sein.
-- **Debugging-Tipp:** Eine Testkonfiguration mit `config_stdout.json` verwenden, die auf `router_stdout.json` und `sinks_stdout.json` verweist. Letztere ersetzt den Metric Store durch `stdout`. Router-Konfiguration für Tests klein halten und den Collector mit `./cc-metric-collector -config config_stdout.json` starten, um die Ausgabe im Terminal zu sehen.
+- **Debugging-Tipp:** Eine Testkonfiguration mit `config_stdout.json` verwenden, die auf `router_stdout.json` und `sinks_stdout.json` verweist. Letztere ersetzt den HTTP-Sink durch `stdout`. Router-Konfiguration für Tests klein halten und den Collector mit `./cc-metric-collector -config config_stdout.json` starten, um die Ausgabe im Terminal zu sehen.
 
 ## Downloads starten beim Scrollen
 - **Symptom:** Beim Scrollen in ClusterCockpit wird der Download von Job-/Node-Ansichten ausgelöst.

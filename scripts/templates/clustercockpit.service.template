@@ -7,8 +7,8 @@ After=network-online.target
 [Service]
 WorkingDirectory=__INSTALL_DIR__/cc-backend
 EnvironmentFile=__INSTALL_DIR__/cc-backend/.env
-User=clustercockpit
-Group=clustercockpit
+User=__CC_USER__
+Group=__CC_GROUP__
 Type=notify
 NotifyAccess=all
 Restart=on-failure

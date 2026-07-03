@@ -10,7 +10,7 @@ Im Folgenden sind die Rollen der Systeme sowie empfohlene Hardware- und Storage-
 Es werden folgende Systeme benötigt:
 
 - **Monitoring-Server**  
-  (Dedizierte Maschine, auf der `cc-backend` und `cc-metric-store` laufen)
+  (Dedizierte Maschine, auf der `cc-backend` läuft)
 - **Compute-Knoten**  
   (Auf diesen werden `cc-metric-collector` und LIKWID installiert)
 - **SLURM-Managementknoten**  
@@ -39,7 +39,7 @@ LABEL=opt-btrfs  /opt  btrfs  rw,noatime,compress=zstd:8,autodefrag  0 0
 **Wichtige Hinweise:**
 
 * Die Partition sollte ausreichend groß dimensioniert werden (siehe unten).
-* Für die Datenbank (cc-metric-store) und das Backend wird die Nutzung von **btrfs** ausdrücklich empfohlen, da die Performance mit ext4 im Praxistest deutlich schlechter war.
+* Für die Datenbank, das Job-Archive und die Metric-Store-Daten des Backends wird die Nutzung von **btrfs** ausdrücklich empfohlen, da die Performance mit ext4 im Praxistest deutlich schlechter war.
 * Btrfs sorgt für effiziente Speicherung und einfache Snapshots/Backups.
 
 ### Abschätzung des Speicherbedarfs
@@ -68,10 +68,10 @@ LABEL=opt-btrfs  /opt  btrfs  rw,noatime,compress=zstd:8,autodefrag  0 0
   * Im Produktivbetrieb sollte das Web-Frontend auf Port `443` (HTTPS) laufen.
   * Port `443` muss für den SLURM-Managementknoten (cc-slurm-adapter) erreichbar sein.
 
-* **cc-metric-store:**
+* **cc-backend Write-API:**
 
-  * Lauscht auf Port `8081`.
-  * Dieser Port muss für die Compute-Knoten erreichbar sein, falls das Routing über andere Systeme erfolgt, dann von diesen.
+  * Läuft über denselben HTTPS-Endpunkt wie `cc-backend`, typischerweise Port `443`.
+  * Dieser Endpunkt muss für die Compute-Knoten erreichbar sein, falls das Routing über andere Systeme erfolgt, dann von diesen.
   * entsprechende Firewall-Regeln/Routing einrichten.
 
 ---

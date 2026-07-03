@@ -1,7 +1,7 @@
 site_name: ClusterCockpit Setup Guide
-repo_url: https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb/cc-setup-guide
-repo_name: hpc.nrw/ap3/energieeffizienter-betrieb/cc-setup-guide
-#site_url: https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb/cc-setup-guide
+repo_url: https://github.com/hpc-nrw/cc-setup-guide
+repo_name: hpc-nrw/cc-setup-guide
+#site_url: https://hpc-nrw.github.io/cc-setup-guide
 
 theme:
   name: material
@@ -45,6 +45,11 @@ theme:
 extra_css:
   - stylesheets/extra.css
 
+markdown_extensions:
+  - pymdownx.snippets:
+      base_path: docs
+      check_paths: true
+
 plugins:
   - search:
       lang:
@@ -62,6 +67,7 @@ plugins:
             - Monitoring Server:
                - Server Preparation: system_preparation.md
                - Install Server Components: monitoringserver.md
+               - Migration 1.4.4 to 1.5.3: migration_1_4_4_to_1_5_3.md
                - Webinterface: webinterface.md
                - Create First Cluster & Define Subcluster: cluster_setup.md
             - Metrics and Collectors:
@@ -85,6 +91,7 @@ plugins:
             - Monitoring Server:
                - Servervorbereitung: system_preparation.md
                - Server-Komponenten installieren: monitoringserver.md
+               - Migration von 1.4.4 auf 1.5.3: migration_1_4_4_to_1_5_3.md
                - Webinterface: webinterface.md
                - Ersten Cluster anlegen & Subcluster definieren: cluster_setup.md
             - Metriken und Collectoren:

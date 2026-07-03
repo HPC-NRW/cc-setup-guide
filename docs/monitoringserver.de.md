@@ -1,4 +1,4 @@
-# Server-Komponenten installieren (cc-backend & cc-metric-store) 
+# Server-Komponenten installieren (cc-backend 1.5.3)
 
 In diesem Abschnitt wird die Installation von ClusterCockpit auf dem dedizierten Monitoring-Server beschrieben.  
 Alle Schritte können automatisiert per Skript oder manuell nachvollzogen werden.
@@ -28,28 +28,22 @@ cc-setup-guide/
 │   ├── cc-installation.sh
 │   └── templates/
 │       ├── cc-backend.json.template
-│       ├── cc-metric-store.config.json.template
 │       ├── cluster.json.template
-│       ├── clustercockpit.service.template
-│       └── cc-metric-store.service.template
+│       └── clustercockpit.service.template
 ```
 
 Das Skript erwartet, dass sich die Template-Dateien im Unterordner `scripts/templates/` befinden.
 
 > **Hinweis zu Laufzeitparametern des Metric Stores**  
-> In der generierten `cc-metric-store/config.json` wird `retention-in-memory` als Zeitfenster definiert, in dem Metrikdaten im Arbeitsspeicher verbleiben. Der Parameter sollte mindestens so groß wie die maximale Joblaufzeit konfiguriert werden, damit laufende Jobs keine Lücken in den Messreihen aufweisen.  
-> Ebenso stehen `checkpoints.interval`, `checkpoints.restore` und `archive.interval` in engem Zusammenhang mit der Jobdauer:  
-> - `checkpoints.interval` wird üblicherweise deutlich kürzer als `retention-in-memory` gewählt, damit regelmäßig Sicherungspunkte entstehen.  
-> - `checkpoints.restore` muss mindestens die gleiche Größe wie `retention-in-memory` besitzen, damit bei einem Neustart alle aktiven Jobs wiederhergestellt werden können.  
-> - `archive.interval` wird größer oder gleich `retention-in-memory` gesetzt, damit Daten vor dem Verwerfen zuverlässig archiviert werden.  
-> Die endgültigen Werte hängen von der maximalen Joblaufzeit sowie den verfügbaren Ressourcen ab.
+> In der generierten `cc-backend/config.json` wird unter `metric-store.retention-in-memory` das Zeitfenster definiert, in dem Metrikdaten im Arbeitsspeicher verbleiben. Der Parameter sollte mindestens so groß wie die maximale Joblaufzeit konfiguriert werden, damit laufende Jobs keine Lücken in den Messreihen aufweisen.  
+> Checkpoints und Cleanup werden ebenfalls im Abschnitt `metric-store` konfiguriert. Die endgültigen Werte hängen von der maximalen Joblaufzeit sowie den verfügbaren Ressourcen ab.
 
 ---
 
 **Zum Herunterladen:**
 
 ```bash
-git clone https://git-ce.rwth-aachen.de/hpc.nrw/ap3/energieeffizienter-betrieb.git cc-setup-guide
+git clone https://github.com/hpc-nrw/cc-setup-guide.git
 cd cc-setup-guide
 ```
 
@@ -116,11 +110,6 @@ wget -O cc-backend.tar.gz "$CC_BACKEND_URL"
 tar -xzf cc-backend.tar.gz -C cc-backend --strip-components=1
 rm cc-backend.tar.gz
 
-# cc-metric-store herunterladen und entpacken
-CC_METRIC_STORE_URL=$(curl -s https://api.github.com/repos/ClusterCockpit/cc-metric-store/releases/latest | grep "browser_download_url.*Linux_x86_64.tar.gz" | cut -d '"' -f 4)
-wget -O cc-metric-store.tar.gz "$CC_METRIC_STORE_URL"
-tar -xzf cc-metric-store.tar.gz -C cc-metric-store --strip-components=1
-rm cc-metric-store.tar.gz
 ```
 
 ---
@@ -149,7 +138,7 @@ cp templates/cc-backend.json.template ./config.json
 sed -i "s/__CLUSTER_NAME__/$CLUSTER_NAME/g" ./config.json
 ```
 
-Entsprechendes gilt für die `cluster.json` und die Konfiguration des Metric-Store.
+Entsprechendes gilt für die `cluster.json`.
 
 ---
 
@@ -249,7 +238,7 @@ EOF
 ```bash
 chmod +x ./cc-backend
 ./cc-backend -init
-echo 2 > ./var/job-archive/version.txt
+echo 3 > ./var/job-archive/version.txt
 ./cc-backend -migrate-db
 ```
 
@@ -285,7 +274,7 @@ echo "$API_PASS" > apiuser_password.txt
 ```
 
 > **Hinweis:** In der generierten `config.json` bleibt `jwts.max-age` standardmäßig leer. Das API-Token läuft damit nicht ab. Soll eine maximale Lebensdauer erzwungen werden, kann dort eine Zeitangabe (z. B. `8760h` für ein Jahr) hinterlegt werden. Nach Ablauf der Zeit ist ein neues Token zu erzeugen.
-> Ebenfalls sinnvoll: `apiAllowedIPs` auf vertrauenswürdige Quellen einschränken. Die Standardkonfiguration erlaubt alle Adressen (`"*"). Es ist nur möglich eine Liste von IP-Adressen anzugeben, keine CIDR-Notation für Subnetze.
+> Ebenfalls sinnvoll: `api-allowed-ips` auf vertrauenswürdige Quellen einschränken. Die Standardkonfiguration erlaubt alle Adressen (`"*"`). Es ist nur möglich eine Liste von IP-Adressen anzugeben, keine CIDR-Notation für Subnetze.
 
 ---
 
@@ -296,8 +285,6 @@ Mit den Vorlagen werden systemd-Unit-Dateien erzeugt und angepasst:
 ```bash
 cp templates/clustercockpit.service.template "$INSTALL_DIR/clustercockpit.service"
 sed -i "s@__INSTALL_DIR__@$INSTALL_DIR@g" "$INSTALL_DIR/clustercockpit.service"
-cp templates/cc-metric-store.service.template "$INSTALL_DIR/cc-metric-store.service"
-sed -i "s@__INSTALL_DIR__@$INSTALL_DIR@g" "$INSTALL_DIR/cc-metric-store.service"
 ```
 
 Die Dienste können anschließend nach `/etc/systemd/system/` kopiert und aktiviert werden.
@@ -310,17 +297,14 @@ Die zentralen Dienste können entweder manuell oder über systemd gestartet werd
 ```bash
 systemctl daemon-reload
 systemctl enable clustercockpit.service
-systemctl enable cc-metric-store.service
 
 systemctl start clustercockpit.service
-systemctl start cc-metric-store.service
 ```
 
 **Status prüfen:**
 
 ```bash
 systemctl status clustercockpit.service
-systemctl status cc-metric-store.service
 ```
 
 ---
@@ -329,14 +313,14 @@ systemctl status cc-metric-store.service
 
 Nach den obigen Schritten sind die Server-Komponenten eingerichtet:
 
-- **Dienste aktiv:** `cc-backend` (Web/API) und `cc-metric-store` laufen und sind start-/stoppbar via systemd.
+- **Dienst aktiv:** `cc-backend` (Web/API und integrierter Metric-Store) läuft und ist start-/stoppbar via systemd.
 - **Zugangsdaten:** Admin-Passwort, API-Passwort und das API-Token wurden erzeugt.
     - `$INSTALL_DIR/cc-backend/admin_password.txt`  
     - `$INSTALL_DIR/cc-backend/apiuser_password.txt`  
     - `$INSTALL_DIR/cc-backend/apikey.txt`
 - **Konfiguration & Secrets:**  
     - Backend: `$INSTALL_DIR/cc-backend/config.json` und `$INSTALL_DIR/cc-backend/.env`  
-    - Metric-Store: `$INSTALL_DIR/cc-metric-store/config.json`
+    - Integrierter Metric-Store: Abschnitt `metric-store` in `$INSTALL_DIR/cc-backend/config.json`
 - **Cluster-Konfiguration:**  
     - Datei: **`$INSTALL_DIR/cc-backend/var/job-archive/$CLUSTER_NAME/cluster.json`:** Zentrale Konfiguration (u. a. Subcluster, Metriken/Thresholds).
 - **Daten- & Verzeichnisstruktur:**  

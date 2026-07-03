@@ -17,7 +17,7 @@ Im Installationsverzeichnis entstehen folgende Dateien, die das Verhalten steuer
 - `config.json`: Pfade zu weiteren Dateien, Intervall für das Sampling.
 - `collectors.json`: Welche Collectoren aktiv sind und wie sie konfiguriert werden.
 - `router.json`: Transformationen (Umbenennen, Filtern, Einheiten ändern).
-- `sinks.json`: Ziele (z. B. `cc-metric-store`).
+- `sinks.json`: Ziele (z. B. die Write-API von `cc-backend`).
 - `receivers.json`: Optionale Weiterleitung eingehender Daten (im Basissetup leer halten).
 
 ## Grundkonfiguration
@@ -34,15 +34,15 @@ Die `receivers.json` bleibt leer (`{}`) und wir ergänzen eine zusätzliche Ausg
 }
 ```
 Der Inhalt wird als `sinks_stdout.json` abgelegt; zusätzlich entsteht eine `config_stdout.json`, in der das ursprüngliche `sinks.json` durch `sinks_stdout.json` ersetzt wird.  
-Mit `./cc-metric-collector -config ./config_stdout.json [-once]` lassen sich Metriken prüfen, ohne sie an den `cc-metric-store` zu senden.
+Mit `./cc-metric-collector -config ./config_stdout.json [-once]` lassen sich Metriken prüfen, ohne sie an `cc-backend` zu senden.
 
-Für den regulären Betrieb verweisen wir in `sinks.json` auf den `cc-metric-store` (Platzhalter ersetzen):
+Für den regulären Betrieb verweisen wir in `sinks.json` auf die Write-API von `cc-backend` (Platzhalter ersetzen):
 
 ```json
 {
-  "cc-metric-store": {
+  "cc-backend": {
     "type": "http",
-    "url": "http://<monitoring-server>:8081/api/write/?cluster=__CLUSTER__",
+    "url": "https://<monitoring-server>/api/write/?cluster=__CLUSTER__",
     "jwt": "__APIKEY__",
     "precision": "s",
     "meta_as_tags": ["unit"],

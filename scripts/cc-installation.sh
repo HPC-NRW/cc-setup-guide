@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Setup script for ClusterCockpit with cc-backend and cc-metric-store
+# Setup script for ClusterCockpit cc-backend >= 1.5.
 
 # Exit on any error
 set -euo pipefail
@@ -103,11 +103,6 @@ fi
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 mkdir -p cc-backend
-mkdir -p cc-metric-store
-
-# Define the actual base path for metric store data using the chosen INSTALL_DIR
-METRIC_STORE_DATA_BASE_DIR="$INSTALL_DIR/cc-metric-store"
-
 
 # Function to get the latest release URL from GitHub
 get_latest_release() {
@@ -142,24 +137,6 @@ echo "cc-backend directory contents:"
 ls -l cc-backend
 echo "cc-backend extracted successfully"
 
-# Download and extract cc-metric-store
-echo "Downloading cc-metric-store..."
-CC_METRIC_STORE_URL=$(get_latest_release "cc-metric-store" "cc-metric-store_Linux_x86_64.tar.gz")
-wget --progress=dot:giga -O cc-metric-store.tar.gz "$CC_METRIC_STORE_URL"
-if [ ! -s cc-metric-store.tar.gz ]; then
-    echo "Error: Downloaded cc-metric-store.tar.gz is empty or invalid"
-    exit 1
-fi
-mkdir -p cc-metric-store-tmp
-echo "Extracting cc-metric-store..."
-tar -xzf cc-metric-store.tar.gz -C cc-metric-store-tmp
-mv cc-metric-store-tmp/* cc-metric-store/ 2>/dev/null || mv cc-metric-store-tmp/cc-metric-store*/* cc-metric-store/ 2>/dev/null || true
-rm -rf cc-metric-store-tmp cc-metric-store.tar.gz
-check_dir_non_empty cc-metric-store
-echo "cc-metric-store directory contents:"
-ls -l cc-metric-store
-echo "cc-metric-store extracted successfully"
-
 # Create job archive directory for cluster.json
 mkdir -p "cc-backend/var/job-archive/$CLUSTER_NAME" # This is relative to $INSTALL_DIR
 
@@ -167,7 +144,7 @@ mkdir -p "cc-backend/var/job-archive/$CLUSTER_NAME" # This is relative to $INSTA
 echo "Generating JWT keypair..."
 pushd "$INSTALL_DIR/cc-backend"
 if [ ! -f ./gen-keypair ]; then
-    echo "Error: gen_keypair binary not found in cc-backend directory ($PWD)"
+    echo "Error: gen-keypair binary not found in cc-backend directory ($PWD)"
     ls -l
     exit 1
 fi
@@ -212,27 +189,6 @@ fi
 cp "$CLUSTER_JSON_TEMPLATE_FILE" "$CLUSTER_JSON_FILE"
 sed -i "s/__CLUSTER_NAME__/$CLUSTER_NAME/g" "$CLUSTER_JSON_FILE"
 
-# Create cc-metric-store config.json from template
-echo "Creating cc-metric-store config.json from template..."
-METRIC_STORE_CONFIG_TEMPLATE_FILE="$SCRIPT_DIR/templates/cc-metric-store.config.json.template"
-METRIC_STORE_CONFIG_FILE="../cc-metric-store/config.json" 
-
-if [ ! -f "$METRIC_STORE_CONFIG_TEMPLATE_FILE" ]; then
-    echo "Error: Template file '$METRIC_STORE_CONFIG_TEMPLATE_FILE' not found!"
-    echo "SCRIPT_DIR is '$SCRIPT_DIR'. Please ensure 'templates/cc-metric-store.config.json.template' exists relative to SCRIPT_DIR."
-    exit 1
-fi
-cp "$METRIC_STORE_CONFIG_TEMPLATE_FILE" "$METRIC_STORE_CONFIG_FILE"
-
-ESCAPED_METRIC_STORE_DATA_BASE_DIR=$(printf '%s\n' "$METRIC_STORE_DATA_BASE_DIR" | sed 's:[&/\\]:\\&:g')
-ESCAPED_JWT_PUBLIC_KEY=$(printf '%s\n' "$JWT_PUBLIC_KEY" | sed 's:[&@\\]:\\&:g')
-
-
-sed -i "s@__METRIC_STORE_BASE_PATH__@$ESCAPED_METRIC_STORE_DATA_BASE_DIR@g" "$METRIC_STORE_CONFIG_FILE"
-sed -i "s/__CLUSTER_NAME__/$CLUSTER_NAME/g" "$METRIC_STORE_CONFIG_FILE"
-sed -i "s@__JWT_PUBLIC_KEY__@$ESCAPED_JWT_PUBLIC_KEY@g" "$METRIC_STORE_CONFIG_FILE"
-
-
 # Set environment variables for cc-backend
 cat > .env <<EOF
 SESSION_KEY="$SESSION_KEY"
@@ -249,7 +205,7 @@ if [ ! -f ./cc-backend ]; then
 fi
 chmod +x ./cc-backend
 ./cc-backend -init
-echo 2 > ./var/job-archive/version.txt 
+echo 3 > ./var/job-archive/version.txt
 ./cc-backend -migrate-db
 echo "Adding users..."
 ./cc-backend -add-user "$ADMIN_USER:admin:$ADMIN_PASS"
@@ -258,17 +214,6 @@ echo "Adding users..."
 # Generate API key and store full output in apikey.txt
 echo "Generating API key..."
 ./cc-backend -jwt "$API_USER" | tee apikey.txt
-
-API_KEY=$(awk -F': ' '/Successfully generated JWT/ {print $3}' apikey.txt)
-
-if [[ -z "$API_KEY" ]]; then
-  echo "Error: Failed to extract JWT token from apikey.txt"
-  exit 1
-fi
-
-escaped_key=$(printf '%s\n' "$API_KEY" | sed 's:[&/\\]:\\&:g')
-
-sed -i "s/__API_TOKEN__/$escaped_key/g" "$BACKEND_CONFIG_FILE" 
 
 # Store passwords
 echo "$ADMIN_PASS" > admin_password.txt 
@@ -280,9 +225,6 @@ echo "Generating systemd service files..."
 
 CC_BACKEND_SERVICE_TEMPLATE="$SCRIPT_DIR/templates/clustercockpit.service.template"
 CC_BACKEND_SERVICE_FILE="$INSTALL_DIR/clustercockpit.service"
-
-CC_METRIC_STORE_SERVICE_TEMPLATE="$SCRIPT_DIR/templates/cc-metric-store.service.template"
-CC_METRIC_STORE_SERVICE_FILE="$INSTALL_DIR/cc-metric-store.service"
 
 ESCAPED_INSTALL_DIR=$(printf '%s\n' "$INSTALL_DIR" | sed 's:[&/\\]:\\&:g') # Escape &, / and \
 
@@ -297,17 +239,6 @@ else
     echo "Warning: Template file '$CC_BACKEND_SERVICE_TEMPLATE' not found. Skipping clustercockpit.service generation."
 fi
 
-# generate cc-metric-store.service
-if [ -f "$CC_METRIC_STORE_SERVICE_TEMPLATE" ]; then
-    cp "$CC_METRIC_STORE_SERVICE_TEMPLATE" "$CC_METRIC_STORE_SERVICE_FILE"
-    sed -i "s@__INSTALL_DIR__@$ESCAPED_INSTALL_DIR@g" "$CC_METRIC_STORE_SERVICE_FILE"
-    sed -i "s/__CC_USER__/$CC_USER/g" "$CC_METRIC_STORE_SERVICE_FILE"
-    sed -i "s/__CC_GROUP__/$CC_GROUP/g" "$CC_METRIC_STORE_SERVICE_FILE"
-    echo "Generated: $CC_METRIC_STORE_SERVICE_FILE"
-else
-    echo "Warning: Template file '$CC_METRIC_STORE_SERVICE_TEMPLATE' not found. Skipping cc-metric-store.service generation."
-fi
-
 echo "Changing ownership of $INSTALL_DIR to $CC_USER:$CC_GROUP..."
 chown -R "$CC_USER:$CC_GROUP" "$INSTALL_DIR"
 
@@ -319,23 +250,17 @@ echo "Installation directory: $INSTALL_DIR"
 echo "Services will run as user '$CC_USER' and group '$CC_GROUP'."
 echo ""
 echo "To start cc-backend: cd $INSTALL_DIR/cc-backend && ./cc-backend -server"
-echo "To start cc-metric-store: cd $INSTALL_DIR/cc-metric-store && ./cc-metric-store"
 echo ""
 echo "--- systemd Service Setup (requires root privileges) ---"
 echo "The following service files have been generated in '$INSTALL_DIR':"
 echo "  - clustercockpit.service"
-echo "  - cc-metric-store.service"
 echo ""
 echo "To install and enable them, run the following commands as root:"
 echo "  sudo mv $INSTALL_DIR/clustercockpit.service /etc/systemd/system/"
-echo "  sudo mv $INSTALL_DIR/cc-metric-store.service /etc/systemd/system/"
 echo "  systemctl daemon-reload"
 echo "  systemctl enable clustercockpit.service"
-echo "  systemctl enable cc-metric-store.service"
 echo "  systemctl start clustercockpit.service"
-echo "  systemctl start cc-metric-store.service"
 echo ""
 echo "To check their status:"
 echo "  systemctl status clustercockpit.service"
-echo "  systemctl status cc-metric-store.service"
 echo "---------------------------------------------------------"

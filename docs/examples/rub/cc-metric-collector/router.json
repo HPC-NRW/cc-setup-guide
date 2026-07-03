@@ -1,0 +1,65 @@
+{
+  "add_tags": [
+    { "key": "cluster", "value": "elysium", "if": "*" }
+  ],
+  "interval_timestamp": false,
+  "num_cache_intervals": 0,
+  "process_messages": {
+    "stage_order": ["add_tag","rename","rename_if","drop_by_type","drop_by_name","drop_if","change_unit_prefix","normalize_unit"],
+    "hostname_tag": "hostname",
+    "rename_messages": {
+      "load_one": "cpu_load",
+      "net_bytes_in_bw": "net_bytes_in",
+      "net_bytes_out_bw": "net_bytes_out",
+      "net_pkts_in_bw": "net_pkts_in",
+      "net_pkts_out_bw": "net_pkts_out",
+      "ib_recv_bw": "ib_recv",
+      "ib_xmit_bw": "ib_xmit",
+      "ib_recv_pkts_bw": "ib_recv_pkts",
+      "ib_xmit_pkts_bw": "ib_xmit_pkts",
+      "lustre_open_diff": "lustre_open",
+      "lustre_close_diff": "lustre_close",
+      "lustre_statfs_diff": "lustre_statfs",
+      "nv_util": "acc_utilization",
+      "nv_fb_mem_used": "acc_mem_used",
+      "nv_power_usage": "acc_power",
+      "nv_mem_util": "acc_mem_util",
+      "nfsio_nread_bw": "nfsio_nread",
+      "nfsio_nwrite_bw": "nfsio_nwrite",
+      "numastats_interleave_hit_rate": "numastats_interleave_hit",
+      "numastats_local_node_rate": "numastats_local_node",
+      "numastats_numa_foreign_rate": "numastats_numa_foreign",
+      "numastats_numa_hit_rate": "numastats_numa_hit",
+      "numastats_numa_miss_rate": "numastats_numa_miss",
+      "numastats_other_node_rate": "numastats_other_node"
+    },
+    "rename_messages_if": {},
+    "drop_messages_if": [
+      "(tag.hostname startsWith 'cpu' || tag.hostname startsWith 'fatcpu' || tag.hostname startsWith 'gpu' || tag.hostname startsWith 'vis') && (name == 'disk_free' || name == 'io_reads' || name == 'io_writes') && !(tag.device == '/dev/nvme0n1p4' || tag.device == 'nvme0n1p4')",
+      "tag.hostname startsWith 'fatgpu' && (name == 'disk_free' || name == 'io_reads' || name == 'io_writes') && !(tag.device == '/dev/md127' || tag.device == 'md127')",
+      "tag.hostname startsWith 'tl40sgpu' && (name == 'disk_free' || name == 'io_reads' || name == 'io_writes') && !(tag.device == '/dev/nvme0n1p1' || tag.device == 'nvme0n1p1')",
+      "tag.hostname startsWith 'tvis' && (name == 'disk_free' || name == 'io_reads' || name == 'io_writes') && !(tag.device == '/dev/md125' || tag.device == 'md125')",
+      "(tag.hostname startsWith 'tcpu' || tag.hostname == 'th200gpu001') && (name == 'disk_free' || name == 'io_reads' || name == 'io_writes') && !(tag.device == '/dev/sda4' || tag.device == 'sda4')",
+      "tag.hostname == 'h200gpu001' && (name == 'disk_free' || name == 'io_reads' || name == 'io_writes') && !(tag.device == '/dev/nvme0n1p1' || tag.device == 'nvme0n1p1')",
+
+      "name == 'nfsio_nread'  && !(tag.stypeid matches 'home:/home')",
+      "name == 'nfsio_nwrite' && !(tag.stypeid matches 'home:/home')",
+      "messagetype == 'metric' && !(name in ['cpu_load','cpu_load_core','cpu_user','mem_used','numastats_interleave_hit','numastats_local_node','numastats_numa_foreign','numastats_numa_hit','numastats_numa_miss','numastats_other_node','disk_free','io_reads','io_writes','lustre_read_bw','lustre_write_bw','lustre_open','lustre_close','lustre_statfs','net_bytes_in','net_bytes_out','net_pkts_in','net_pkts_out','ib_recv','ib_xmit','ib_recv_pkts','ib_xmit_pkts','nfs4_open','nfs4_close','nfsio_nread','nfsio_nwrite','nread','nwrite','acc_utilization','acc_mem_used','acc_power','acc_mem_util','nv_compute_processes','mem_bw','flops_any','clock','ipc','core_power','node_total_power','job_mem_used','flops_bf16','flops_sp','flops_dp'])"
+    ],
+    "change_unit_prefix": {
+      "name == 'mem_used'": "G",
+      "name == 'acc_mem_used'": "G",
+      "name == 'lustre_read_bw'": "M",
+      "name == 'lustre_write_bw'": "M",
+      "name == 'ib_recv'": "M",
+      "name == 'ib_xmit'": "M",
+      "name == 'disk_free'": "G",
+      "name == 'net_bytes_in'": "M",
+      "name == 'net_bytes_out'": "M",
+      "name == 'nfsio_nread'": "M",
+      "name == 'nfsio_nwrite'": "M",
+      "name == 'job_mem_used'": "G"
+    }
+  },
+  "normalize_units": true
+}

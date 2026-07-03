@@ -1,7 +1,5 @@
 # cc-metric-collector Quick Setup
 
-> **Hinweis:** Die Collectoren `numastats` und die NUMA-Ausgabe von `memstat` (`numa_stats`) erfordern Anpassungen am offiziellen `cc-backend`. Ohne diese Modifikationen erscheinen die Werte nicht im Webinterface.
-
 Diese Anleitung richtet sich an Administratoren, die sich schnell an einer bereits funktionierenden Konfiguration entlanghangeln wollen.  
 
 ## collectors.json (Beispiel für AMD Zen 4)
@@ -307,22 +305,22 @@ Folgende Anpassungen sind für eine eigene Konfiguration nötig:
       "name == 'disk_free' && !(tag.device == '/dev/nvme0n1p4' || tag.device == 'nvme0n1p4')",
       "name == 'io_reads'  && !(tag.device == '/dev/nvme0n1p4' || tag.device == 'nvme0n1p4')",
       "name == 'io_writes' && !(tag.device == '/dev/nvme0n1p4' || tag.device == 'nvme0n1p4')",
-      "name == 'nfsio_nread_bw'  && !(tag.stypeid matches 'home:/home')",
-      "name == 'nfsio_nwrite_bw' && !(tag.stypeid matches 'home:/home')",
-      "messagetype == 'metric' && !(name in ['load_one','cpu_load_core','cpu_user','mem_used','numastats_interleave_hit_rate','numastats_local_node_rate','numastats_numa_foreign_rate','numastats_numa_hit_rate','numastats_numa_miss_rate','numastats_other_node_rate','disk_free','io_reads','io_writes','lustre_read_bw','lustre_write_bw','lustre_open_diff','lustre_close_diff','lustre_statfs_diff','net_bytes_in_bw','net_bytes_out_bw','net_pkts_in_bw','net_pkts_out_bw','ib_recv_bw','ib_xmit_bw','ib_recv_pkts_bw','ib_xmit_pkts_bw','nfs4_open','nfs4_close','nfsio_nread_bw','nfsio_nwrite_bw','nread','nwrite','nv_util','nv_fb_mem_used','nv_power_usage','nv_mem_util','nv_compute_processes','mem_bw','flops_any','clock','ipc','core_power','node_total_power','job_mem_used'])"
+      "name == 'nfsio_nread'  && !(tag.stypeid matches 'home:/home')",
+      "name == 'nfsio_nwrite' && !(tag.stypeid matches 'home:/home')",
+      "messagetype == 'metric' && !(name in ['cpu_load','cpu_load_core','cpu_user','mem_used','numastats_interleave_hit','numastats_local_node','numastats_numa_foreign','numastats_numa_hit','numastats_numa_miss','numastats_other_node','disk_free','io_reads','io_writes','lustre_read_bw','lustre_write_bw','lustre_open','lustre_close','lustre_statfs','net_bytes_in','net_bytes_out','net_pkts_in','net_pkts_out','ib_recv','ib_xmit','ib_recv_pkts','ib_xmit_pkts','nfs4_open','nfs4_close','nfsio_nread','nfsio_nwrite','nread','nwrite','acc_utilization','acc_mem_used','acc_power','acc_mem_util','nv_compute_processes','mem_bw','flops_any','clock','ipc','core_power','node_total_power','job_mem_used'])"
     ],
     "change_unit_prefix": {
       "name == 'mem_used'": "G",
-      "name == 'nv_fb_mem_used'": "G",
+      "name == 'acc_mem_used'": "G",
       "name == 'lustre_read_bw'": "M",
       "name == 'lustre_write_bw'": "M",
-      "name == 'ib_recv_bw'": "M",
-      "name == 'ib_xmit_bw'": "M",
+      "name == 'ib_recv'": "M",
+      "name == 'ib_xmit'": "M",
       "name == 'disk_free'": "G",
-      "name == 'net_bytes_in_bw'": "M",
-      "name == 'net_bytes_out_bw'": "M",
-      "name == 'nfsio_nread_bw'": "M",
-      "name == 'nfsio_nwrite_bw'": "M",
+      "name == 'net_bytes_in'": "M",
+      "name == 'net_bytes_out'": "M",
+      "name == 'nfsio_nread'": "M",
+      "name == 'nfsio_nwrite'": "M",
       "name == 'job_mem_used'": "G"
     }
   },
@@ -330,20 +328,18 @@ Folgende Anpassungen sind für eine eigene Konfiguration nötig:
 }
 ```
 
-> **Achtung (Stand 16.10.2025):** `change_unit_prefix` und `drop_messages_if` greifen aktuell noch auf die ursprünglichen Metriknamen zu, also bevor `rename_messages` angewendet wurde. Dieses Verhalten ist nicht gewünscht und wird vom Entwicklerteam korrigiert. Nach dem nächsten Update müssen sowohl die Prefix-Anpassungen als auch die Filter auf die bereits umbenannten Namen zeigen.
-
 ### Erklärung der wichtigsten Verarbeitungsschritte
 
 - **add_tags** – versieht jede Nachricht mit dem Clusternamen `elysium` und sorgt so für eindeutige Zuordnung.
 - **stage_order** – definiert die Reihenfolge der Verarbeitungsschritte; wichtig, wenn zusätzliche Transformationen ergänzt werden.
 - **hostname_tag** – legt fest, dass der Hostname aus dem Tag `hostname` gelesen wird.
 - **rename_messages** – bringt die Rohmetriken auf die in `cc-backend` verwendeten Namen. Im Wesentlichen werden die Suffixe `_bw` und `_rate` entfernt, außerdem werden GPU-Metriken auf den allgemeinen Präfix `acc` abgebildet.
-- **drop_messages_if** – filtert unerwünschte Partitionen und Exporte heraus und reduziert den Datenstrom auf die benötigten Metriken.
-- **change_unit_prefix** – vereinheitlicht Einheiten (z. B. Byte → GB oder MB) für die Anzeige.
+- **drop_messages_if** – filtert unerwünschte Partitionen und Exporte heraus und reduziert den Datenstrom auf die benötigten Metriken. Da `rename_messages` vorher ausgeführt wird, beziehen sich die Filter auf die umbenannten Metriknamen.
+- **change_unit_prefix** – vereinheitlicht Einheiten (z. B. Byte → GB oder MB) für die Anzeige. Auch diese Regeln verwenden die umbenannten Metriknamen.
 - **normalize_units** – sorgt dafür, dass Einheiten nach den Umrechnungen konsistent geschrieben werden.
 
 Wenn eine Metrik nicht eindeutig ist, wie bei `disk_free`, wo alle Partitionen aller Festplatten ausgegeben werden, verarbeitet `cc-backend` nur die erste eingehende Nachricht. Die übrigen werden verworfen. Daher ist eine gezielte Filterung notwendig.
-Das Entwicklerteam plant, dass Nachrichten mit demselben Namen für denselben Knoten – aber unterschiedlichen `stype`-Werten oder anderen Tags – künftig nebeneinander im selben Graphen dargestellt werden. Aktuell ist das noch nicht möglich.
+Nachrichten mit demselben Namen für denselben Knoten – aber unterschiedlichen `stype`-Werten oder anderen Tags – können in dieser Konfiguration nicht nebeneinander im selben Graphen dargestellt werden.
 
 In unserem Beispiel werden die `nfsio`-Metriken nur für den Export `/home` behalten, `/cluster` wird verworfen. Alternativ ließen sich die Metriken in der Rename-Stage umbenennen, z. B. zu `cluster_nfsio_nread`.
 Dasselbe gilt für andere Metriken: Bei mehreren GPFS-Dateisystemen können diese umbenannt und getrennt erhoben werden. 
@@ -379,4 +375,4 @@ WantedBy=multi-user.target
 
 ```
 
-Nach dem Aktivieren des Service werden die Metriken im 60‑Sekunden-Intervall an den `cc-metric-store` übertragen. Weitere Collectoren oder Umbenennungen lassen sich jederzeit durch Ergänzen der obigen JSON-Dateien hinzufügen.
+Nach dem Aktivieren des Service werden die Metriken im 60‑Sekunden-Intervall an `cc-backend` übertragen. Weitere Collectoren oder Umbenennungen lassen sich jederzeit durch Ergänzen der obigen JSON-Dateien hinzufügen.

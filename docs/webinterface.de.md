@@ -34,7 +34,7 @@ Der Cluster (`demo_cluster`) wird im Menüpunkt "Status" sichtbar, solange die D
 
   Prüfen, ob die Datei `cluster.json` im richtigen Verzeichnis liegt und valide ist (Syntax-Fehler, ungültiges JSON).
   Bei fehlerhafter/fehlender `cluster.json` lädt die Weboberfläche nicht korrekt.
-  Der Clustername muss in der `cc-backend/config.json` unter `clusters` konfiguriert sein.
+  Der Clustername muss mit `name` in der `cluster.json` des Job-Archives übereinstimmen.
 
 * **Fehler "Service nicht erreichbar"**
 

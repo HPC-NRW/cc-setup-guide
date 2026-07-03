@@ -7,8 +7,8 @@
 Dieser Abschnitt ist Teil der Schritt-für-Schritt-Anleitung nach dem Setup des `cc-metric-collector`.  
 Um Metriken hinzuzufügen, werden immer drei Schritte benötigt:
 1. Metrik mit `cc-metric-collector` erheben.
-2. Im `cc-metric-store` die `config.json` anpassen, damit die Werte gespeichert werden.
-3. in `cc-backend/var/job-archive/$CLUSTERNAME/` die `cluster.json` erweitern, damit die Metrik im Webinterface angezeigt wird.
+2. Routing und Namen im `cc-metric-collector` passend setzen.
+3. in `cc-backend/var/job-archive/$CLUSTERNAME/` die `cluster.json` erweitern, damit die Metrik gespeichert und im Webinterface angezeigt wird.
 
 Eine Übersicht über alle Collectoren erhält man [im offiziellen Git-Repo](https://github.com/ClusterCockpit/cc-metric-collector/blob/main/collectors/README.md)
 
@@ -28,7 +28,7 @@ load_fifteen,cluster=testcluster,hostname=cpu001,type=node value=0.94 1752156889
 proc_run,cluster=testcluster,hostname=cpu001,type=node value=1i 1752156889208064633
 proc_total,cluster=testcluster,hostname=cpu001,type=node value=1712i 1752156889208064633
 ```
-Jede Zeile ist eine Message im Lineprotocol Format an den `cc-metric-store`. Die erste Spalte enthält den Metriknamen, Clusternamen, Hostnamen und den Typ der Metrik (neben Node sind auch Socket, MemoryDomain (=NUMA Domain) und hwthread (=CPU Core) möglich). Bei anderen Metriken taucht hier auch die Einheit und wenn die Granularität feiner als `Node` ist ein Identifier auf. Die zweite Spalte enthält den Wert, das endständige `i` markiert einen Wert als Integer. Die dritte Spalte ist der Unix Timestamp in Nanosekunden.
+Jede Zeile ist eine Message im Lineprotocol Format an die Write-API von `cc-backend`. Die erste Spalte enthält den Metriknamen, Clusternamen, Hostnamen und den Typ der Metrik (neben Node sind auch Socket, MemoryDomain (=NUMA Domain) und hwthread (=CPU Core) möglich). Bei anderen Metriken taucht hier auch die Einheit und wenn die Granularität feiner als `Node` ist ein Identifier auf. Die zweite Spalte enthält den Wert, das endständige `i` markiert einen Wert als Integer. Die dritte Spalte ist der Unix Timestamp in Nanosekunden.
 
 Wie wir sehen erhebt der Collector fünf Werte: Den Load Average über 1, 5 und 15 Minuten, die Anzahl der laufenden Prozesse und die Gesamtzahl der Prozesse. Wir wollen `load_one` für die Metrik `cpu_load` erheben und die anderen Messages verwerfen. Daher müssen wir jetzt zwei Dinge tun: Die unerwünschten Werte herausfiltern und `load_one` in `cpu_load` umbenennen.
 
@@ -52,20 +52,20 @@ Dafür nutzen wir den `messageProcessor` aus der `cc-lib`, der über die `router
       "load_one": "cpu_load"
     },
     "drop_messages_if": [
-      "!(name in [`load_one`])"
+      "!(name in ['cpu_load'])"
     ]
   }
 }
 ```
 
-Die Liste in `drop_messages_if` wird als Positivliste für alle weiteren Collectoren benutzt.
+Die Liste in `drop_messages_if` wird als Positivliste für alle weiteren Collectoren benutzt. In der aktuellen `cc-lib`-Version wird `rename_messages` vor `drop_messages_if` ausgeführt, daher beziehen sich Filter und Einheitenumrechnungen auf die umbenannten Metriknamen.
 
 Wir erhalten jetzt nur noch unsere gewünschte Metrik mit dem neuen Namen:
 ```bash
 cpu_load,cluster=testcluster,hostname=cpu001,type=node value=1.58 1752158115922836909
 ```
 
-Wichtig: Beim Verwerfen der Metrik muss der originale Name und nicht der umbenannte Name eingetragen werden!
+Wichtig: Beim Verwerfen der Metrik muss der umbenannte Name eingetragen werden, wenn die Metrik zuvor über `rename_messages` umbenannt wurde.
 
 Anmerkung:
 Eine weitere Funktion des `messageProcessor`, die wir im weiteren Verlauf noch benutzen werden, ist das Ändern der Einheit. Wenn wir z.B. den belegten Arbeitsspeicher in Byte erheben, in unserem Webinterface aber in GB haben wollen, erreichen wir das auf folgende Weise:
@@ -80,21 +80,24 @@ Eine weitere Funktion des `messageProcessor`, die wir im weiteren Verlauf noch b
 }
 ```
 
-Die Metrik `cpu_load` wird jetzt an den `cc-metric-store` gesendet. Damit dieser die Werte auch speichert, müssen wir einen Eintrag in der `config.json` auf dem Monitoring-Server vornehmen:
+Die Metrik `cpu_load` wird jetzt an `cc-backend` gesendet. Damit sie gespeichert und angezeigt wird, ergänzen wir einen Eintrag in der `cluster.json` im Job-Archive:
 
 ```json
 {
-  "metrics": {
-    "cpu_load": {
-      "frequency": 60,
-      "aggregation": "avg"
-    }
-  }
+  "name": "cpu_load",
+  "unit": { "base": "load" },
+  "scope": "node",
+  "aggregation": "avg",
+  "timestep": 60,
+  "peak": 48,
+  "normal": 48,
+  "caution": 10,
+  "alert": 1
 }
 ```
 
-`frequency` gibt an, in welchem Interval der store die Werte erwartet. Dieser Wert sollte also mit `interval` aus der `config.json` von `cc-metric-collector` übereinstimmen.
-Für die `aggregation` stehen 3 verschiedene Typen zur Verfügung: `avg`, `sum` und `nil`.
+`timestep` sollte mit `interval` aus der `config.json` von `cc-metric-collector` übereinstimmen.
+Für die `aggregation` stehen verschiedene Typen zur Verfügung, insbesondere `avg` und `sum`.
 Wir wählen `avg` für Zustands- oder Intensitätswerte pro Einheit, wie z.B. Frequenz, CPU/GPU-Auslastung oder Temperatur und `sum` für Werte, die sich addieren lassen, wie FLOPS oder Energieverbräuche.
 
 ---

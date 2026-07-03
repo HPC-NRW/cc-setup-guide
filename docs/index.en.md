@@ -1,9 +1,8 @@
-> warning "Work in Progress"
-    This guide is being updated continuously and may change at any time.
-
 # Introduction
 
 This guide was created within the [HPC.NRW](https://hpc.dh.nrw) project using example configurations from [FAU Erlangen](https://github.com/ClusterCockpit/cc-examples/tree/main/nhr%40fau) and Ruhr University Bochum.
+
+The guide is kept up to date on a best-effort basis. For problems, corrections, or change requests, please open an [issue in the GitHub repository](https://github.com/hpc-nrw/cc-setup-guide/issues).
 
 ---
 
@@ -26,15 +25,12 @@ A key part of any ClusterCockpit setup is the monitoring of low-level hardware m
 ClusterCockpit consists of multiple components that communicate with each other and run on different systems within the cluster infrastructure:
 
 - **cc-backend:**  
-  Central server component with web frontend, API, and database access.  
-  Hosts the UI, user management, and configuration logic.
-
-- **cc-metric-store:**  
-  High-performance time-series database that holds incoming metrics in RAM for fast reads.
+  Central server component with web frontend, API, database access, and integrated metric store.  
+  Hosts the UI, user management, configuration logic, and temporary time-series storage.
 
 - **cc-metric-collector:**  
   Agent that is installed on the compute nodes.  
-  Collects metrics such as CPU load, memory, network, I/O, etc., and forwards them to the cc-metric-store.
+  Collects metrics such as CPU load, memory, network, I/O, etc., and forwards them to the `cc-backend` write API.
 
 - **cc-slurm-adapter:**  
   Component that integrates with SLURM so that job metadata (user, project, allocations) appear inside ClusterCockpit.
@@ -45,7 +41,7 @@ ClusterCockpit consists of multiple components that communicate with each other 
 
 A common deployment looks like this:
 
-- **Dedicated monitoring server** that runs `cc-backend` and `cc-metric-store`.
+- **Dedicated monitoring server** that runs `cc-backend`.
 - **Compute nodes** that each run `cc-metric-collector`.
 - **SLURM management node** that additionally runs `cc-slurm-adapter`.
 
@@ -79,7 +75,7 @@ This guide targets system administrators who want to install, configure, and ope
 
 ## How is this guide structured?
 
-The manual walks you step by step through the entire process—from system preparation and installation to the first start and advanced configuration and operations.  
+The manual walks you step by step through the entire process from system preparation and installation to the first start and advanced configuration and operations.  
 Practical examples and scripts help you reach a working monitoring setup as quickly as possible.
 
 ---

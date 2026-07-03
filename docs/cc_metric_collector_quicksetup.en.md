@@ -1,7 +1,5 @@
 # cc-metric-collector quick setup
 
-> **Note:** The `numastats` collector and the NUMA output of `memstat` (`numa_stats`) require modifications to the upstream `cc-backend`. Without these patches the values do not show up in the web UI.
-
 This guide is aimed at administrators who want to build upon a working configuration.
 
 ## collectors.json (example for AMD Zen 4)
@@ -306,22 +304,22 @@ Adjust the configuration to fit your site:
       "name == 'disk_free' && !(tag.device == '/dev/nvme0n1p4' || tag.device == 'nvme0n1p4')",
       "name == 'io_reads'  && !(tag.device == '/dev/nvme0n1p4' || tag.device == 'nvme0n1p4')",
       "name == 'io_writes' && !(tag.device == '/dev/nvme0n1p4' || tag.device == 'nvme0n1p4')",
-      "name == 'nfsio_nread_bw'  && !(tag.stypeid matches 'home:/home')",
-      "name == 'nfsio_nwrite_bw' && !(tag.stypeid matches 'home:/home')",
-      "messagetype == 'metric' && !(name in ['load_one','cpu_load_core','cpu_user','mem_used','numastats_interleave_hit_rate','numastats_local_node_rate','numastats_numa_foreign_rate','numastats_numa_hit_rate','numastats_numa_miss_rate','numastats_other_node_rate','disk_free','io_reads','io_writes','lustre_read_bw','lustre_write_bw','lustre_open_diff','lustre_close_diff','lustre_statfs_diff','net_bytes_in_bw','net_bytes_out_bw','net_pkts_in_bw','net_pkts_out_bw','ib_recv_bw','ib_xmit_bw','ib_recv_pkts_bw','ib_xmit_pkts_bw','nfs4_open','nfs4_close','nfsio_nread_bw','nfsio_nwrite_bw','nread','nwrite','nv_util','nv_fb_mem_used','nv_power_usage','nv_mem_util','nv_compute_processes','mem_bw','flops_any','clock','ipc','core_power','node_total_power','job_mem_used'])"
+      "name == 'nfsio_nread'  && !(tag.stypeid matches 'home:/home')",
+      "name == 'nfsio_nwrite' && !(tag.stypeid matches 'home:/home')",
+      "messagetype == 'metric' && !(name in ['cpu_load','cpu_load_core','cpu_user','mem_used','numastats_interleave_hit','numastats_local_node','numastats_numa_foreign','numastats_numa_hit','numastats_numa_miss','numastats_other_node','disk_free','io_reads','io_writes','lustre_read_bw','lustre_write_bw','lustre_open','lustre_close','lustre_statfs','net_bytes_in','net_bytes_out','net_pkts_in','net_pkts_out','ib_recv','ib_xmit','ib_recv_pkts','ib_xmit_pkts','nfs4_open','nfs4_close','nfsio_nread','nfsio_nwrite','nread','nwrite','acc_utilization','acc_mem_used','acc_power','acc_mem_util','nv_compute_processes','mem_bw','flops_any','clock','ipc','core_power','node_total_power','job_mem_used'])"
     ],
     "change_unit_prefix": {
       "name == 'mem_used'": "G",
-      "name == 'nv_fb_mem_used'": "G",
+      "name == 'acc_mem_used'": "G",
       "name == 'lustre_read_bw'": "M",
       "name == 'lustre_write_bw'": "M",
-      "name == 'ib_recv_bw'": "M",
-      "name == 'ib_xmit_bw'": "M",
+      "name == 'ib_recv'": "M",
+      "name == 'ib_xmit'": "M",
       "name == 'disk_free'": "G",
-      "name == 'net_bytes_in_bw'": "M",
-      "name == 'net_bytes_out_bw'": "M",
-      "name == 'nfsio_nread_bw'": "M",
-      "name == 'nfsio_nwrite_bw'": "M",
+      "name == 'net_bytes_in'": "M",
+      "name == 'net_bytes_out'": "M",
+      "name == 'nfsio_nread'": "M",
+      "name == 'nfsio_nwrite'": "M",
       "name == 'job_mem_used'": "G"
     }
   },
@@ -329,19 +327,17 @@ Adjust the configuration to fit your site:
 }
 ```
 
-> **Warning (as of 16 Oct 2025):** `change_unit_prefix` and `drop_messages_if` currently operate on the original metric names, i.e., before `rename_messages` runs. This is not intended and will be fixed upstream. After the next update you must make sure both the unit adjustments and filters reference the renamed metrics.
-
 ### Explanation of the main processing stages
 
 - **add_tags** – injects the cluster tag `elysium` so every message is properly attributed.
 - **stage_order** – defines the processing order, which becomes important once you extend the pipeline.
 - **hostname_tag** – reads the hostname from the `hostname` tag.
 - **rename_messages** – maps the raw metrics to the names used by `cc-backend`. Most suffixes such as `_bw` and `_rate` are removed and GPU metrics are normalized to the `acc_*` prefix.
-- **drop_messages_if** – filters unwanted partitions and exports and reduces the data stream to the metrics you want to keep.
-- **change_unit_prefix** – normalizes the displayed units (bytes → GB or MB, …).
+- **drop_messages_if** – filters unwanted partitions and exports and reduces the data stream to the metrics you want to keep. Because `rename_messages` runs first, these filters use the renamed metric names.
+- **change_unit_prefix** – normalizes the displayed units (bytes → GB or MB, …). These rules also use the renamed metric names.
 - **normalize_units** – makes sure units stay consistent after conversions.
 
-Some metrics are ambiguous—for example `disk_free`, which reports every partition from every disk. `cc-backend` only keeps the first message per metric and node, the rest is discarded. You therefore have to filter the desired partition explicitly. The development team plans to allow multiple messages with the same name but different `stype` or tags per node so they can be shown side by side in the same chart. This is not supported yet.
+Some metrics are ambiguous—for example `disk_free`, which reports every partition from every disk. `cc-backend` only keeps the first message per metric and node, the rest is discarded. You therefore have to filter the desired partition explicitly. In this configuration, messages with the same name for the same node but different `stype` values or tags cannot be displayed side by side in the same chart.
 
 In the example the `nfsio` metrics are kept only for the `/home` export; `/cluster` is dropped. Alternatively you could rename them in the `rename` stage, e.g., `cluster_nfsio_nread`. The same principle applies to other metrics—if you have multiple GPFS filesystems, rename and track them separately.
 
@@ -374,5 +370,4 @@ TimeoutStopSec=20
 WantedBy=multi-user.target
 ```
 
-Once the service is active the metrics are sent to the `cc-metric-store` every 60 seconds. You can add further collectors or renames at any time by extending the JSON files above.
-
+Once the service is active the metrics are sent to `cc-backend` every 60 seconds. You can add further collectors or renames at any time by extending the JSON files above.

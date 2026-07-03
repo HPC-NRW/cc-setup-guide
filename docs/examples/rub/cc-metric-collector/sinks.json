@@ -1,0 +1,15 @@
+{
+  "elysiumstore": {
+    "type": "http",
+    "url": "https://jobmon.hpc.rub.de/api/write/?cluster=elysium",
+    "jwt": "",
+    "precision": "s",
+    "meta_as_tags": [
+       "unit"
+        ],
+        "idle_connection_timeout": "60s",
+        "max_retries": 10,
+        "timeout": "10s"
+    }
+}
+

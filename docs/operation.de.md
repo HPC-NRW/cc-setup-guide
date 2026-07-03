@@ -17,6 +17,14 @@ server {
 
     server_name __FQDN__;
 
+    location = /robots.txt {
+        default_type text/plain;
+        return 200 "User-agent: *\nDisallow: /\n";
+    }
+
+    server_tokens off;
+    autoindex off;
+
     ssl_certificate     /etc/ssl/__PEM_FILE__;
     ssl_certificate_key /etc/ssl/__KEY_FILE__;
 
@@ -24,8 +32,15 @@ server {
     ssl_ciphers         HIGH:!aNULL:!MD5;
 
     add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
 
     location / {
+        limit_except GET POST HEAD {
+            deny all;
+        }
+
         proxy_pass         http://127.0.0.1:8443;
         proxy_set_header   Host $host;
         proxy_set_header   X-Real-IP $remote_addr;

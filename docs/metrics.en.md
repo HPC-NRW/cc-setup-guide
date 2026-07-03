@@ -8,8 +8,8 @@ This chapter builds upon the `cc-metric-collector` setup.
 Adding a metric always involves three stages:
 
 1. Collect the metric with `cc-metric-collector`.
-2. Adjust `config.json` on the `cc-metric-store` so the values are stored.
-3. Extend `cc-backend/var/job-archive/$CLUSTERNAME/cluster.json` so the metric shows up in the web UI.
+2. Configure routing and names in `cc-metric-collector`.
+3. Extend `cc-backend/var/job-archive/$CLUSTERNAME/cluster.json` so the metric is stored and shown in the web UI.
 
 You can find an overview of all collectors in the [upstream repository](https://github.com/ClusterCockpit/cc-metric-collector/blob/main/collectors/README.md).
 
@@ -33,7 +33,7 @@ proc_run,cluster=testcluster,hostname=cpu001,type=node value=1i 1752156889208064
 proc_total,cluster=testcluster,hostname=cpu001,type=node value=1712i 1752156889208064633
 ```
 
-Each line is a message in line protocol that would be sent to the metric store. The first column contains the metric name, cluster name, hostname, and the metric type (`node`, `socket`, `memoryDomain` (=NUMA domain), or `hwthread`). Other metrics also add the unit and an identifier if the granularity is finer than node level. The second column contains the value (the trailing `i` marks integers), and the third column is the Unix timestamp in nanoseconds.
+Each line is a message in line protocol that would be sent to the `cc-backend` Write API. The first column contains the metric name, cluster name, hostname, and the metric type (`node`, `socket`, `memoryDomain` (=NUMA domain), or `hwthread`). Other metrics also add the unit and an identifier if the granularity is finer than node level. The second column contains the value (the trailing `i` marks integers), and the third column is the Unix timestamp in nanoseconds.
 
 The collector reports five values: the 1, 5, and 15 minute load averages, the number of running processes, and the total number of processes. We only need `load_one` for `cpu_load` and want to drop the other messages. That means we have to filter out the unwanted values and rename `load_one` to `cpu_load`.
 
@@ -57,13 +57,13 @@ This is handled by the `messageProcessor` in `cc-lib`, which is configured throu
       "load_one": "cpu_load"
     },
     "drop_messages_if": [
-      "!(name in [`load_one`])"
+      "!(name in ['cpu_load'])"
     ]
   }
 }
 ```
 
-The `drop_messages_if` list acts as a whitelist for all collectors.
+The `drop_messages_if` list acts as a whitelist for all collectors. In the current `cc-lib` release, `rename_messages` runs before `drop_messages_if`, so filters and unit conversions refer to the renamed metric names.
 
 Now only the desired metric remains:
 
@@ -71,7 +71,7 @@ Now only the desired metric remains:
 cpu_load,cluster=testcluster,hostname=cpu001,type=node value=1.58 1752158115922836909
 ```
 
-Important: when dropping metrics you must refer to their original name, not the renamed one!
+Important: when dropping metrics you must refer to the renamed name if the metric was renamed through `rename_messages`.
 
 Note: another `messageProcessor` feature we will use later is unit conversion. For example, if we collect memory consumption in bytes but want to display GB in the UI, we can write:
 
@@ -85,24 +85,26 @@ Note: another `messageProcessor` feature we will use later is unit conversion. F
 }
 ```
 
-`cpu_load` is now sent to the metric store. To persist the values we have to add an entry to `config.json` on the monitoring server:
+`cpu_load` is now sent to `cc-backend`. To store and display it, add an entry to `cluster.json` in the job archive:
 
 ```json
 {
-  "metrics": {
-    "cpu_load": {
-      "frequency": 60,
-      "aggregation": "avg"
-    }
-  }
+  "name": "cpu_load",
+  "unit": { "base": "load" },
+  "scope": "node",
+  "aggregation": "avg",
+  "timestep": 60,
+  "peak": 48,
+  "normal": 48,
+  "caution": 10,
+  "alert": 1
 }
 ```
 
-`frequency` specifies the expected interval in seconds. It should match the `interval` configured in the collector’s `config.json`.  
-You can choose between three aggregation modes: `avg`, `sum`, and `nil`.  
+`timestep` should match the `interval` configured in the collector’s `config.json`.  
+Common aggregation modes are `avg` and `sum`.  
 Use `avg` for state or intensity metrics per entity (frequency, CPU/GPU utilization, temperature) and `sum` for additive metrics such as FLOPS or energy consumption.
 
 ---
 
 Proceed with part 2: [Additional metrics & thresholds](more_metrics.md).
-

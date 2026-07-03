@@ -1,0 +1,209 @@
+{
+  "loadavg": {},
+  "schedstat": {},
+  "cpustat": {},
+  "memstat": {
+    "node_stats": true,
+    "numa_stats": true
+  },
+  "slurm_cgroup": {
+    "use_sudo": true
+  },
+  "numastats": {
+    "send_abs_values": false,
+    "send_derived_values": true
+  },
+  "diskstat": {
+    "exclude_mounts": [
+      "/scratch/slurm-tmpfs"
+    ]
+  },
+  "iostat": {
+    "exclude_devices": [
+      "nvme0n1",
+      "nvme0n1p1",
+      "nvme0n1p2",
+      "nvme0n1p3",
+      "nvme1n1",
+      "nvme1n1p1",
+      "nvme2n1",
+      "nvme2n1p1"
+    ]
+  },
+  "lustrestat": {
+    "lctl_command": "/usr/sbin/lctl",
+    "send_abs_values": false,
+    "send_derived_values": true,
+    "send_diff_values": true,
+    "use_sudo": true
+  },
+  "netstat": {
+    "include_devices": [
+      "eno1"
+    ],
+    "send_abs_values": false,
+    "send_derived_values": true,
+    "interface_aliases": {
+      "eno1": [
+        "eno1np0"
+      ]
+    }
+  },
+  "nfs4stat": {
+    "nfsstat": "/usr/sbin/nfsstat"
+  },
+  "nfsiostat": {
+    "use_server_as_stype": true,
+    "send_abs_values": false,
+    "send_derived_values": true
+  },
+  "ibstat": {
+    "send_abs_values": false,
+    "send_derived_values": true
+  },
+  "customcmd": {
+    "commands": [
+      "/usr/bin/total_node_power"
+    ]
+  },
+    "nvidia": {
+    "process_mig_devices": false,
+    "use_pci_info_as_type_id": true,
+    "add_pci_info_tag": true,
+    "add_uuid_meta": false,
+    "add_board_number_meta": false,
+    "add_serial_meta": false,
+    "use_uuid_for_mig_device": false,
+    "use_slice_for_mig_device": false
+  },
+  "likwid": {
+    "force_overwrite": true,
+    "invalid_to_zero": true,
+    "access_mode": "accessdaemon",
+    "accessdaemon_path": "/opt/likwid/sbin",
+    "liblikwid_path": "/opt/likwid/lib/liblikwid.so",
+    "lockfile_path": "/opt/cc-metric-collector/likwid.lock",
+    "eventsets": [
+      {
+        "events": {
+          "FIXC1": "ACTUAL_CPU_CLOCK",
+          "FIXC2": "MAX_CPU_CLOCK",
+          "PWR0": "RAPL_CORE_ENERGY",
+          "PMC0": "RETIRED_INSTRUCTIONS",
+          "PMC1": "CPU_CLOCKS_UNHALTED",
+          "PMC2": "RETIRED_SSE_AVX_FLOPS_ALL_DP_SCALAR",
+          "PMC3": "MERGE",
+          "PMC4": "RETIRED_SSE_AVX_FLOPS_ALL_DP_PACKED",
+          "PMC5": "MERGE",
+          "UMC0C0": "CAS_CMD_RD",
+          "UMC0C1": "CAS_CMD_WR",
+          "UMC10C0": "CAS_CMD_RD",
+          "UMC10C1": "CAS_CMD_WR",
+          "UMC11C0": "CAS_CMD_RD",
+          "UMC11C1": "CAS_CMD_WR",
+          "UMC1C0": "CAS_CMD_RD",
+          "UMC1C1": "CAS_CMD_WR",
+          "UMC2C0": "CAS_CMD_RD",
+          "UMC2C1": "CAS_CMD_WR",
+          "UMC3C0": "CAS_CMD_RD",
+          "UMC3C1": "CAS_CMD_WR",
+          "UMC4C0": "CAS_CMD_RD",
+          "UMC4C1": "CAS_CMD_WR",
+          "UMC5C0": "CAS_CMD_RD",
+          "UMC5C1": "CAS_CMD_WR",
+          "UMC6C0": "CAS_CMD_RD",
+          "UMC6C1": "CAS_CMD_WR",
+          "UMC7C0": "CAS_CMD_RD",
+          "UMC7C1": "CAS_CMD_WR",
+          "UMC8C0": "CAS_CMD_RD",
+          "UMC8C1": "CAS_CMD_WR",
+          "UMC9C0": "CAS_CMD_RD",
+          "UMC9C1": "CAS_CMD_WR"
+        },
+        "metrics": [
+          {
+            "calc": "1.0E-06*(FIXC1/FIXC2)/inverseClock",
+            "name": "clock",
+            "publish": true,
+            "type": "hwthread"
+          },
+          {
+            "calc": "PMC0/PMC1",
+            "name": "ipc",
+            "publish": true,
+            "type": "hwthread"
+          },
+          {
+            "calc": "time",
+            "name": "Runtime (RDTSC) [s]",
+            "publish": false,
+            "type": "hwthread"
+          },
+          {
+            "calc": "PWR0/time",
+            "name": "core_power",
+            "publish": true,
+            "type": "hwthread"
+          },
+                    {
+            "calc": "1.0E-09*(UMC0C0+UMC1C0+UMC2C0+UMC3C0+UMC4C0+UMC5C0+UMC6C0+UMC7C0+UMC8C0+UMC9C0+UMC10C0+UMC11C0)*64.0/time",
+            "name": "mem_read",
+            "publish": false,
+            "type": "socket"
+          },
+          {
+            "calc": "1.0E-09*(UMC0C1+UMC1C1+UMC2C1+UMC3C1+UMC4C1+UMC5C1+UMC6C1+UMC7C1+UMC8C1+UMC9C1+UMC10C1+UMC11C1)*64.0/time",
+            "name": "mem_write",
+            "publish": false,
+            "type": "socket"
+          },
+                    {
+            "calc": "1.0E-09*(PMC2+PMC4)/time",
+            "name": "flops_dp",
+            "publish": true,
+            "type": "hwthread"
+          }
+        ]
+      },
+      {
+        "events": {
+          "PMC0": "RETIRED_SSE_AVX_FLOPS_ALL_SP_SCALAR",
+          "PMC1": "MERGE",
+          "PMC2": "RETIRED_SSE_AVX_FLOPS_ALL_SP_PACKED",
+          "PMC3": "MERGE",
+          "PMC4": "RETIRED_SSE_AVX_FLOPS_ALL_BF16",
+          "PMC5": "MERGE"
+        },
+        "metrics": [
+          {
+            "calc": "1.0E-09*(PMC2+PMC4)/time",
+            "name": "flops_sp",
+            "publish": true,
+            "type": "hwthread"
+          },
+                    {
+            "calc": "1.0E-09*PMC2/time",
+            "name": "flops_bf16",
+            "publish": true,
+            "type": "hwthread"
+          }
+        ]
+      }
+    ],
+    "globalmetrics": [
+      {
+        "name": "mem_bw",
+        "calc": "mem_read+mem_write",
+        "type": "socket",
+        "unit": "Gbyte/s",
+        "publish": true
+      },
+            {
+        "name": "flops_any",
+        "calc": "flops_bf16+flops_dp+flops_sp",
+        "type": "hwthread",
+        "publish": true
+      }
+    ]
+  }
+}
