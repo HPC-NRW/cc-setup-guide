@@ -15,6 +15,7 @@
   /* Akzentfarbe = Buttons, Slider, Fokus etc. */
   --md-accent-fg-color:         #954F71;  /* Pink */
   --md-accent-fg-color--transparent: rgba(149, 79, 113, 0.15);
+  --md-typeset-a-color:         #3C4466;
 }
 
 /* DARK MODE (scheme: slate) */
@@ -24,8 +25,10 @@
   --md-primary-fg-color--light: #7882B3;
   --md-primary-fg-color--dark:  #404A7A;
 
-  --md-accent-fg-color:         #B96A91;  /* Pink leicht aufgehellt */
-  --md-accent-fg-color--transparent: rgba(185, 106, 145, 0.20);
+  /* Hellere Textfarben für Links, Hover und aktive Navigation. */
+  --md-accent-fg-color:         #DA8AB3;
+  --md-accent-fg-color--transparent: rgba(218, 138, 179, 0.20);
+  --md-typeset-a-color:         #ADB8E6;
 }
 
 /* ================================
@@ -36,20 +39,8 @@
   --md-code-font: ui-monospace, SFMono-Regular, Menlo, Monaco, "Liberation Mono", Consolas, monospace;
 }
 
-/* Safety: Erzwinge Fonts global (überschreibt Material-Defaults) */
-html, body, .md-typeset, .md-nav, .md-header, .md-footer {
-  font-family: var(--md-text-font) !important;
-}
-
 /* Überschriften dürfen ruhig kräftiger sein */
 .md-typeset h1, .md-typeset h2, .md-typeset h3,
 .md-typeset h4, .md-typeset h5, .md-typeset h6 {
   font-weight: 700; /* Arial Bold */
-}
-
-/* Links leicht an Primärfarbe anlehnen (optional) */
-:root,
-[data-md-color-scheme="default"],
-[data-md-color-scheme="slate"] {
-  --md-typeset-a-color: var(--md-primary-fg-color);
 }

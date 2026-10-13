@@ -5,6 +5,7 @@ repo_name: hpc-nrw/cc-setup-guide
 
 theme:
   name: material
+  font: false
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
