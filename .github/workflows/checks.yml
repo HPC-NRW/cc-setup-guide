@@ -1,0 +1,39 @@
+name: Guide regression checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  documentation-and-fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: |
+          pip install -r requirements-test.txt
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends perl libjson-pp-perl libdbi-perl libdbd-sqlite3-perl
+      - name: Syntax and hardware fixtures
+        run: |
+          bash -n scripts/cc-installation.sh
+          perl -c docs/scripts/generate-subcluster.pl
+          perl -c docs/scripts/updateUserconfig.pl
+          python tests/test_subcluster.py --source . --work "$RUNNER_TEMP/cc-guide-tests"
+          python tests/test_hardware.py --source . --work "$RUNNER_TEMP/cc-guide-tests"
+          python tests/test_metrics.py --source . --work "$RUNNER_TEMP/cc-guide-tests"
+          python tests/test_configure_collector.py --source . --work "$RUNNER_TEMP/cc-guide-tests"
+          python tests/test_update_userconfig.py --source . --work "$RUNNER_TEMP/cc-guide-tests"
+          python tests/installer_unit.py --source . --work "$RUNNER_TEMP/cc-installer-unit"
+      - name: Install browser for local-only checks
+        run: python -m playwright install --with-deps chromium
+      - name: Strict build, links, translations and browser
+        run: python tests/test_docs.py --source . --work "$RUNNER_TEMP/cc-guide-tests" --browser

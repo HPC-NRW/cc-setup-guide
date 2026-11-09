@@ -1,0 +1,4 @@
+-r requirements.txt
+beautifulsoup4==4.15.0
+jsonschema==4.25.1
+playwright==1.60.0

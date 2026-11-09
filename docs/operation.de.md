@@ -1,138 +1,55 @@
-### Umstellen von `cc-backend` auf Produktivbetrieb
+# Umstellen von `cc-backend` auf Produktivbetrieb
 
-#### Verwendung von nginx
-Anpassungen in der `config.json`:
-* "addr" wird auf einen Port > 1024 gesetzt, z.B. `8443`.
-* Einträge für  "https-cert-file" und  "https-key-file" werden entfernt
-* "redirect-http-to" wir entfernt
+Für den Produktivbetrieb braucht das Backend einen erreichbaren HTTPS-Endpunkt, passende Zugriffsregeln und einen Plan für Wartung und Datensicherung. Das [RUB-Backendbeispiel](examples/rub/cc-backend/config.json) zeigt eine vollständige Konfiguration. API-Quelladressen, Speicherbudget und Pfade sind dabei standortspezifisch.
 
-`nginx`-config anlegen (z.B. /etc/nginx/sites-available/clustercockpit):
+`config.json` und die passende [UI-Konfiguration](examples/rub/cc-backend/ui-config.json) liegen im Backend-Arbeitsverzeichnis; `ui-file` verweist auf `ui-config.json`. Die Pfade unter `/opt/monitoring/cc-metric-store/var/` gehören im RUB-Beispiel zum integrierten Store. Dafür läuft kein separater Metric-Store-Dienst.
 
-<details>
-<summary>nginx-config anzeigen</summary>
-```bash
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+Die folgenden Aufgaben ergänzen die Installation:
 
-    server_name __FQDN__;
+- HTTPS und API-Erreichbarkeit einrichten, bevor Collectoren und Scheduleranbindung Daten über das Netz senden.
+- Lokale [Benutzerkonten](user_accounts.de.md) verwalten oder bei Bedarf LDAP anbinden.
+- Ablauf und Verteilung der API-Tokens festlegen.
+- [Backup und Wiederherstellung](backup_restore.de.md) vorbereiten und vor [Updates](updates.de.md) prüfen.
 
-    location = /robots.txt {
-        default_type text/plain;
-        return 200 "User-agent: *\nDisallow: /\n";
-    }
+## Verwendung von nginx
 
-    server_tokens off;
-    autoindex off;
+Die Anleitung [HTTPS und Reverse Proxy einrichten](https_setup.de.md) beschreibt nginx, Zertifikate, API-Erreichbarkeit und die Freigabe weiterer HTTP-Methoden. Dieser Schritt steht vor der Collector-Installation.
 
-    ssl_certificate     /etc/ssl/__PEM_FILE__;
-    ssl_certificate_key /etc/ssl/__KEY_FILE__;
+## LDAP-Anbindung
 
-    ssl_protocols       TLSv1.2 TLSv1.3;
-    ssl_ciphers         HIGH:!aNULL:!MD5;
+LDAP ist optional. Das RUB-Beispiel verwendet zunächst lokale Benutzerkonten und JWTs. Für eine zentrale Anmeldung ergänzt das folgende Fragment das vorhandene `auth`-Objekt; die übrigen Einstellungen bleiben erhalten. URL, Suchbasis, Bind-DN und Filter erfordern eine Abstimmung mit dem IDM-Team.
 
-    add_header Strict-Transport-Security "max-age=31536000" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header X-Frame-Options "DENY" always;
-
-    location / {
-        limit_except GET POST HEAD {
-            deny all;
-        }
-
-        proxy_pass         http://127.0.0.1:8443;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_read_timeout 90;
-    }
-}
-
-server {
-    listen 80;
-    listen [::]:80;
-    server_name __FQDN__;
-    return 301 https://$host$request_uri;
-}
-```
-</details>
-
-Noch die Platzhalter für den FQDN und die SSL-Zertifikatsdateien ersetzen und aktivieren: `ln -s /etc/nginx/sites-available/clustercockpit /etc/nginx/sites-enabled/`.
-Mit dieser Konfig wird der Traffic von Port 80 auf Port 443 weitergeleitet und generell alle Anfragen an 8443 weitergereicht, sowohl für IPv4 als auch IPv6.
-Der `systemd`-Service sollte noch angepasst werden, damit die Weboberfläche erst gestartet wird, wenn `nginx` bereits gestartet ist: `Requires=nginx.service`
-
-#### LDAP-Anbindung
-Die Anbindung an LDAP ermöglicht es den Usern ihre eigenen Jobs zu sehen und sich mit ihren gewohnten Logindaten anzumelden. In der Regel wird dazu ein `bind-user` der IDM Abteilung benötigt.
-In der `config.json` von `cc-backend` sehen die Einträge dann z.B. so aus:
-```json
-  "ldap": {
-    "url": "ldaps://hpcldap.rrze.uni-erlangen.de",
-    "user_base": "ou=people,ou=hpc,dc=rrze,dc=uni-erlangen,dc=de",
-    "search_dn": "cn=hpcmonitoring,ou=roadm,ou=profile,ou=hpc,dc=rrze,dc=uni-erlangen,dc=de",
-    "user_bind": "uid={username},ou=people,ou=hpc,dc=rrze,dc=uni-erlangen,dc=de",
-    "user_filter": "(&(objectclass=posixAccount))",
-    "sync_interval": "24h"
-  },
-```
-In diesem Beispiel werden alle Einträge aus dem LDAP Verzeichnis alle 24 Stunden synchronisiert. Je nach Größe der Institution oder den Vorgaben des IDM (Rate-Limting) ist es sinnvoll eine LDAP-Gruppe nur mit den HPC-Usern anzulegen und nur diese Gruppe zu synchronisieren:
+`sync-user-on-login` übernimmt Benutzer beim Login. Alternativ löst `"sync-interval": "24h"` eine regelmäßige Synchronisation aus.
 
 ```json
-    "user_filter": "(&(objectclass=posixAccount)(memberOf=cn=hpc,ou=groups,dc=uni-erlangen,dc=de))",
-    "syncUserOnLogin": true
+{
+  "auth": {
+    "ldap": {
+      "url": "ldaps://ldap.example.org:636",
+      "user-base": "ou=people,dc=example,dc=org",
+      "search-dn": "cn=monitoring,ou=services,dc=example,dc=org",
+      "user-bind": "uid={username},ou=people,dc=example,dc=org",
+      "user-filter": "(&(objectclass=posixAccount)(memberOf=cn=hpc,ou=groups,dc=example,dc=org))",
+      "sync-user-on-login": true
+    }
+  }
+}
 ```
-`"syncUserOnLogin"` fügt User beim ersten Login zur lokalen Datenbank hinzu. Es wird dann kein "sync\_interval" mehr benötigt.
 
-#### Checkmk
-Um die Ablaufzeit des `jwt`-Token mit Hilfe von `checkmk` überprüfen zu lassen, kann man ein `python`-Skript in `/usr/lib/check_mk_agent/local/` hinterlegen (muss ausführbar sein):
+Der Suchbenutzer benötigt `LDAP_ADMIN_PASSWORD` in der vorhandenen Backend-`.env`. Die Ergänzung erfolgt als root in einem geschützten Editor mit `umask 077`. Bestehende JWT- und Session-Schlüssel bleiben erhalten. Passwörter gehören weder in Shellargumente noch in den Guide oder Logs.
 
-```python
-#!/usr/bin/python3
+Wie im Installer hat `.env` die Rechte `0640` und gehört root sowie der eigenen Dienstgruppe. Andere Konten erhalten keinen Zugriff; das Installationsverzeichnis hat `0750`. In der Dienstgruppe dürfen nur autorisierte Konten Mitglied sein. Nach dem Neustart gehören Anmeldung, Gruppenzuordnung und Sichtbarkeit der Jobs zu den Prüfungen mit einem künstlichen LDAP-Testkonto und dem vorgesehenen IDM.
 
-import jwt
-import time
-import sys
-import os
+## API-Zugriff und Tokenrotation
 
-JWT_FILE = "/opt/monitoring/cc-backend/admin.jwt"
+Collector und Scheduleranbindung benötigen einen rohen Backend-JWT. Die Installation legt ihn in `/opt/monitoring/cc-backend/apikey.txt` ab. Token und Kopien bleiben ausschließlich für die vorgesehenen Dienstkonten lesbar; die Verteilung erfolgt über einen geschützten Kanal.
 
-def critical(msg):
-    print(f"3 jwt_token - {msg}")
-    sys.exit(3)
+`auth.jwts.max-age` legt die Ablaufregel fest. Ein leerer Wert erzeugt nicht ablaufende Tokens; das Installationstemplate setzt eine begrenzte Laufzeit. Vor Ablauf ist ein neuer JWT nötig. Nach der Verteilung an alle Clients bestätigt ein authentifizierter API-Zugriff die Umstellung.
 
-try:
-    if not os.path.exists(JWT_FILE):
-        critical("JWT file not found")
+Eine spätere Konfigurationsänderung verändert bereits ausgegebene Tokens nicht. Neue Tokens widerrufen alte nicht automatisch. Ein Wechsel des Signaturschlüssels betrifft alle Clients und gehört deshalb in eine geplante Rotation.
 
-    with open(JWT_FILE, 'r') as f:
-        token = f.read().strip()
+## Persistenzgrenzen des integrierten Stores
 
-    try:
-        payload = jwt.decode(token, options={"verify_signature": False})
-    except jwt.DecodeError:
-        critical("JWT decode error")
-    except Exception as e:
-        critical(f"JWT decoding failed: {type(e).__name__}")
+JSON-Checkpoints runden Messwerte auf eine Nachkommastelle, beispielsweise `0.034` auf `0.0`. Nachgelieferte historische Werte mit Zeitstempeln vor dem Prozessstart können zunächst über die API sichtbar sein und nach einem Neustart fehlen.
 
-    exp = payload.get("exp")
-    if not exp:
-        critical("exp field missing in JWT")
-
-    now = int(time.time())
-    seconds_left = exp - now
-    days_left = seconds_left // 86400
-
-    if seconds_left <= 0:
-        print(f"2 jwt_token - JWT Token expired!")
-        sys.exit(2)
-    elif days_left < 30:
-        print(f"1 jwt_token - JWT Token expires in {days_left} days")
-        sys.exit(1)
-    else:
-        print(f"0 jwt_token - JWT Token is valid ({days_left} days left)")
-        sys.exit(0)
-
-except Exception as e:
-    critical(f"Unexpected error: {type(e).__name__}")
-```
+Vor Wartungsarbeiten müssen laufende Jobs abgeschlossen und ihre archivierten Inhalte geprüft sein. Jobarchive und vollständige Offlinebackups gehören gemeinsam zur Wiederherstellung. Ein kontrollierter Neustart mit anschließendem Vergleich bekannter Zeitreihen macht sichtbar, welche Werte erhalten geblieben sind. Der Ablauf steht unter [Backup und Wiederherstellung](backup_restore.de.md); die Prüfung eines einzelnen Jobs beschreibt [Ersten Job prüfen](first_job.de.md).

@@ -1,7 +1,9 @@
 {
   "main": {
     "addr": "127.0.0.1:8443",
-    "api-allowed-ips": ["*"],
+    "api-allowed-ips": [
+      "__API_CLIENT_IP__"
+    ],
     "short-running-jobs-duration": 30,
     "enable-job-taggers": false,
     "nodestate-retention": {
@@ -12,18 +14,13 @@
     "resampling": {
       "minimum-points": 600,
       "trigger": 180,
-      "resolutions": [240, 60]
+      "resolutions": [
+        240,
+        60
+      ]
     }
   },
   "auth": {
-    "ldap": {
-      "url": "ldaps://openldap.ruhr-uni-bochum.de:636",
-      "user-base": "ou=users,dc=ruhr-uni-bochum,dc=de",
-      "search-dn": "cn=hpc-web,ou=sicherheit,dc=ruhr-uni-bochum,dc=de",
-      "user-bind": "uid={username},ou=users,dc=ruhr-uni-bochum,dc=de",
-      "user-filter": "(&(objectclass=posixAccount)(memberOf=cn=elysium,ou=groups,dc=ruhr-uni-bochum,dc=de))",
-      "syncUserOnLogin": true
-    },
     "jwts": {
       "max-age": ""
     }
@@ -40,13 +37,13 @@
   "metric-store": {
     "checkpoints": {
       "file-format": "json",
-      "directory": "/opt/monitoring/cc-backend/var/checkpoints"
+      "directory": "/opt/monitoring/cc-metric-store/var/checkpoints"
     },
     "memory-cap": 100,
     "retention-in-memory": "48h",
     "cleanup": {
       "mode": "archive",
-      "directory": "/opt/monitoring/cc-backend/var/archive"
+      "directory": "/opt/monitoring/cc-metric-store/var/archive"
     }
   },
   "ui-file": "ui-config.json"

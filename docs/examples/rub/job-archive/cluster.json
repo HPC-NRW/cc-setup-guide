@@ -4,53 +4,55 @@
         {
             "name": "cpu_load",
             "unit": {
-                "base": "load"
+                "base": ""
             },
             "scope": "node",
             "aggregation": "avg",
             "timestep": 60,
-            "peak": 48,
+            "peak": 1500,
             "normal": 48,
-            "caution": 10,
-            "alert": 1,
+            "caution": 24,
+            "alert": 4.8,
             "subClusters": [
-                { "name": "fatcpu", "peak": 96, "normal": 96, "caution": 10, "alert": 1 },
-                { "name": "fatgpu", "peak": 96, "normal": 96, "caution": 10, "alert": 1 },
-                { "name": "h200gpu", "peak": 128, "normal": 128, "caution": 10, "alert": 1 },
-                { "name": "tcpu", "peak": 192, "normal": 192, "caution": 10, "alert": 1 },
-                { "name": "tl40sgpu", "peak": 64, "normal": 64, "caution": 10, "alert": 1 },
-                { "name": "th200gpu", "peak": 64, "normal": 64, "caution": 10, "alert": 1 },
-                { "name": "tvis", "peak": 128, "normal": 128, "caution": 10, "alert": 1 }
+                { "name": "cpu", "peak": 1500, "normal": 48, "caution": 24, "alert": 4.8 },
+                { "name": "cpu_abs2", "peak": 250, "normal": 48, "caution": 24, "alert": 4.8 },
+                { "name": "fatcpu", "peak": 800, "normal": 96, "caution": 48, "alert": 9.6, "restrict": false },
+                { "name": "gpu", "peak": 800, "normal": 48, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 5000, "normal": 96, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "vis", "peak": 500, "normal": 48, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 200, "normal": 128, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tcpu", "peak": 800, "normal": 192, "caution": 96, "alert": 19.2, "restrict": false },
+                { "name": "th200gpu", "peak": 100, "normal": 64, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tl40sgpu", "peak": 150, "normal": 64, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tvis", "peak": 200, "normal": 128, "caution": -1000, "alert": -2000, "restrict": false }
             ]
-        },
-        {
-            "name": "cpu_user",
-            "unit": {
-                "base": "%",
-                "description": "Percentage of CPU time spent in user mode"
-            },
-            "scope": "hwthread",
-            "aggregation": "avg",
-            "footprint": "avg",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 70,
-            "caution": 50,
-            "alert": 30
         },
         {
             "name": "cpu_load_core",
             "unit": {
-                "base": "load"
+                "base": ""
             },
             "scope": "hwthread",
             "aggregation": "avg",
             "timestep": 60,
-            "peak": 12,
-            "normal": 1.1,
+            "peak": 100,
+            "normal": 1,
             "caution": 2,
             "alert": 3,
-            "lowerIsBetter": true
+            "lowerIsBetter": true,
+            "subClusters": [
+                { "name": "cpu", "peak": 100, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "cpu_abs2", "peak": 50, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "fatcpu", "peak": 50, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "gpu", "peak": 30, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "fatgpu", "peak": 100, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "vis", "peak": 80, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "h200gpu", "peak": 50, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "tcpu", "peak": 120, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "th200gpu", "peak": 15, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "tl40sgpu", "peak": 15, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true },
+                { "name": "tvis", "peak": 15, "normal": 1, "caution": 2, "alert": 3, "lowerIsBetter": true }
+            ]
         },
         {
             "name": "mem_used",
@@ -61,20 +63,22 @@
             "scope": "memoryDomain",
             "aggregation": "sum",
             "timestep": 60,
-            "peak": 384,
-            "normal": 384,
-            "caution": 384,
-            "alert": 384,
+            "peak": 412.32,
+            "normal": 412.32,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
-                { "name": "fatcpu", "peak": 2600, "normal": 2304, "caution": 2304, "alert": 2304 },
-                { "name": "cpu_abs2", "peak": 900, "normal": 768, "caution": 768, "alert": 768 },
-                { "name": "fatgpu", "peak": 1500, "normal": 1152, "caution": 1152, "alert": 1152 },
-                { "name": "vis", "peak": 1500, "normal": 1152, "caution": 1152, "alert": 1152 },
-                { "name": "h200gpu", "peak": 2700, "normal": 2304, "caution": 2304, "alert": 2304 },
-                { "name": "tcpu", "peak": 1800, "normal": 1536, "caution": 1536, "alert": 1536 },
-                { "name": "tl40sgpu", "peak": 900, "normal": 768, "caution": 768, "alert": 768 },
-                { "name": "th200gpu", "peak": 1800, "normal": 1536, "caution": 1536, "alert": 1536 },
-                { "name": "tvis", "peak": 900, "normal": 768, "caution": 768, "alert": 768 }
+                { "name": "cpu", "peak": 412.32, "normal": 412.32, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 824.63, "normal": 824.63, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "fatcpu", "peak": 2473.9, "normal": 2473.9, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "gpu", "peak": 412.32, "normal": 412.32, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 1236.95, "normal": 1236.95, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "vis", "peak": 1236.95, "normal": 1236.95, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "h200gpu", "peak": 2473.9, "normal": 2473.9, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tcpu", "peak": 1649.27, "normal": 1649.27, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "th200gpu", "peak": 1649.27, "normal": 1649.27, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tl40sgpu", "peak": 824.63, "normal": 824.63, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tvis", "peak": 824.63, "normal": 824.63, "caution": -1000, "alert": -2000, "restrict": false }
             ]
         },
         {
@@ -86,17 +90,22 @@
             "scope": "socket",
             "aggregation": "sum",
             "timestep": 60,
-            "peak": 700,
+            "peak": 800,
             "normal": 591,
-            "caution": 591,
-            "alert": 591,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
-                { "name": "fatcpu", "peak": 900, "normal": 778, "caution": 778, "alert": 778 },
-                { "name": "fatgpu", "peak": 900, "normal": 779, "caution": 779, "alert": 779 },
-                { "name": "h200gpu", "peak": 900, "normal": 790, "caution": 790, "alert": 790 },
-                { "name": "tcpu", "peak": 1000, "normal": 892, "caution": 892, "alert": 892 },
-                { "name": "th200gpu", "peak": 1000, "normal": 864, "caution": 864, "alert": 864 },
-                { "name": "tvis", "peak": 1300, "normal": 1148, "caution": 1148, "alert": 1148 }
+                { "name": "cpu", "peak": 800, "normal": 591, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 800, "normal": 591, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 1000, "normal": 778, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "gpu", "peak": 800, "normal": 587, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 1000, "normal": 779, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "vis", "peak": 800, "normal": 588, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 1000, "normal": 790, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tcpu", "peak": 1200, "normal": 892, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "th200gpu", "peak": 1200, "normal": 864, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tl40sgpu", "peak": 800, "normal": 576, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 1500, "normal": 1148, "caution": -1000, "alert": -2000, "restrict": false }
             ]
         },
         {
@@ -108,11 +117,23 @@
             "scope": "node",
             "aggregation": "sum",
             "timestep": 60,
-            "lowerIsBetter": true,
-            "peak": 125,
-            "normal": 10,
-            "caution": 20,
-            "alert": 40
+            "peak": 150,
+            "normal": 125,
+            "caution": -1000,
+            "alert": -2000,
+            "subClusters": [
+                { "name": "cpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "gpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "vis", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "tcpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "th200gpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "tl40sgpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 }
+            ]
         },
         {
             "name": "net_bytes_out",
@@ -122,42 +143,31 @@
             },
             "scope": "node",
             "aggregation": "sum",
-            "lowerIsBetter": true,
             "timestep": 60,
-            "peak": 125,
-            "normal": 10,
-            "caution": 20,
-            "alert": 40
-        },
-        {
-            "name": "net_pkts_in",
-            "unit": {
-                "base": "packets/s"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "net_pkts_out",
-            "unit": {
-                "base": "packets/s"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
+            "peak": 150,
+            "normal": 125,
+            "caution": -1000,
+            "alert": -2000,
+            "subClusters": [
+                { "name": "cpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "gpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "vis", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "tcpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "th200gpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "tl40sgpu", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 150, "normal": 125, "caution": -1000, "alert": -2000 }
+            ]
         },
         {
             "name": "disk_free",
-            "unit": { "base": "B", "prefix": "G" },
+            "unit": {
+                "base": "B",
+                "prefix": "G"
+            },
             "scope": "node",
             "aggregation": "sum",
             "timestep": 60,
@@ -166,79 +176,19 @@
             "caution": 939,
             "alert": 376,
             "subClusters": [
-                { "name": "cpu", "peak": 876,  "normal": 876,  "caution": 219, "alert": 88 },
+                { "name": "cpu", "peak": 876, "normal": 876, "caution": 219, "alert": 88 },
                 { "name": "cpu_abs2", "peak": 3755, "normal": 3755, "caution": 939, "alert": 376 },
-                { "name": "gpu", "peak": 1836, "normal": 1836,  "caution": 459, "alert": 184 },
-                { "name": "fatcpu", "peak": 1836, "normal": 1836,  "caution": 459, "alert": 184 },
-                { "name": "fatgpu", "peak": 1836, "normal": 1836,  "caution": 459, "alert": 184 },
-                { "name": "vis", "peak": 876,  "normal": 876,  "caution": 219, "alert": 88 }
+                { "name": "gpu", "peak": 1836, "normal": 1836, "caution": 459, "alert": 184 },
+                { "name": "fatcpu", "peak": 1836, "normal": 1836, "caution": 459, "alert": 184 },
+                { "name": "fatgpu", "peak": 15361, "normal": 15361, "caution": 3840, "alert": 1536 },
+                { "name": "vis", "peak": 876, "normal": 876, "caution": 219, "alert": 88 },
+                { "name": "tcpu", "peak": 396, "normal": 396, "caution": 99, "alert": 40 },
+                { "name": "tl40sgpu", "peak": 1920, "normal": 1920, "caution": 480, "alert": 192 },
+                { "name": "tvis", "peak": 3840, "normal": 3840, "caution": 960, "alert": 384 },
+                { "name": "h200gpu", "peak": 7680, "normal": 7680, "caution": 1920, "alert": 768 },
+                { "name": "th200gpu", "peak": 15361, "normal": 15361, "caution": 3840, "alert": 1536 }
             ]
 },
-        {
-            "name": "io_reads",
-            "unit": {
-                "base": "ops/s"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "io_writes",
-            "unit": {
-                "base": "ops/s"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "lustre_open",
-            "unit": {
-                "base": "operations"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 50000,
-            "normal": 25000,
-            "caution": 40000,
-            "alert": 45000
-        },
-        {
-            "name": "lustre_close",
-            "unit": {
-                "base": "operations"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 50000,
-            "normal": 25000,
-            "caution": 40000,
-            "alert": 45000
-        },
-        {
-            "name": "lustre_statfs",
-            "unit": {
-                "base": "operations"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 50,
-            "caution": 80,
-            "alert": 90
-        },
         {
             "name": "lustre_read_bw",
             "unit": {
@@ -249,9 +199,22 @@
             "aggregation": "sum",
             "timestep": 60,
             "peak": 60000,
-            "normal": 60000,
-            "caution": 60000,
-            "alert": 60000
+            "normal": 0,
+            "caution": -1000,
+            "alert": -2000,
+            "subClusters": [
+                { "name": "cpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "gpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 100000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "vis", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tcpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "th200gpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tl40sgpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 }
+            ]
         },
         {
             "name": "lustre_write_bw",
@@ -263,35 +226,22 @@
             "aggregation": "sum",
             "timestep": 60,
             "peak": 60000,
-            "normal": 60000,
-            "caution": 60000,
-            "alert": 60000
-        },
-        {
-            "name": "nfs4_open",
-            "unit": {
-                "base": "operations"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "nfs4_close",
-            "unit": {
-                "base": "operations"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
+            "normal": 0,
+            "caution": -1000,
+            "alert": -2000,
+            "subClusters": [
+                { "name": "cpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "gpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "vis", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tcpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "th200gpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tl40sgpu", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 60000, "normal": 0, "caution": -1000, "alert": -2000 }
+            ]
         },
         {
             "name": "nfsio_nread",
@@ -302,10 +252,23 @@
             "scope": "node",
             "aggregation": "sum",
             "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
+            "peak": 800,
+            "normal": 0,
+            "caution": -1000,
+            "alert": -2000,
+            "subClusters": [
+                { "name": "cpu", "peak": 800, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 200, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 200, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "gpu", "peak": 8000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 1000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "vis", "peak": 1000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 100, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tcpu", "peak": 1200, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "th200gpu", "peak": 600, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tl40sgpu", "peak": 600, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 100, "normal": 0, "caution": -1000, "alert": -2000 }
+            ]
         },
         {
             "name": "nfsio_nwrite",
@@ -316,88 +279,23 @@
             "scope": "node",
             "aggregation": "sum",
             "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "numastats_interleave_hit",
- 				    "unit": {
-                "base": "count/s"
-        },
-            "scope": "memoryDomain",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "numastats_local_node",
- 				    "unit": {
-                "base": "count/s"
-        },
-            "scope": "memoryDomain",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "numastats_numa_foreign",
- 				    "unit": {
-                "base": "count/s"
-        },
-            "scope": "memoryDomain",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "numastats_numa_hit",
- 				    "unit": {
-                "base": "count/s"
-        },
-            "scope": "memoryDomain",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "numastats_numa_miss",
- 				    "unit": {
-                "base": "count/s"
-        },
-            "scope": "memoryDomain",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
-        },
-        {
-            "name": "numastats_other_node",
- 				    "unit": {
-                "base": "count/s"
-        },
-            "scope": "memoryDomain",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 100,
-            "caution": 100,
-            "alert": 100
+            "peak": 150,
+            "normal": 0,
+            "caution": -1000,
+            "alert": -2000,
+            "subClusters": [
+                { "name": "cpu", "peak": 150, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 100, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 100, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "gpu", "peak": 120, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 150, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "vis", "peak": 250, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 100, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tcpu", "peak": 100, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "th200gpu", "peak": 100, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tl40sgpu", "peak": 100, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 100, "normal": 0, "caution": -1000, "alert": -2000 }
+            ]
         },
         {
             "name": "ib_recv",
@@ -408,10 +306,23 @@
             "scope": "node",
             "aggregation": "sum",
             "timestep": 60,
-            "peak": 12000,
-            "normal": 10000,
-            "caution": 0,
-            "alert": 0
+            "peak": 12500,
+            "normal": 0,
+            "caution": -1000,
+            "alert": -2000,
+            "subClusters": [
+                { "name": "cpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "gpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 50000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "vis", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tcpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "th200gpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tl40sgpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 }
+            ]
         },
         {
             "name": "ib_xmit",
@@ -422,75 +333,22 @@
             "scope": "node",
             "aggregation": "sum",
             "timestep": 60,
-            "peak": 12000,
-            "normal": 10000,
-            "caution": 0,
-            "alert": 0
-        },
-        {
-            "name": "ib_recv_pkts",
-            "unit": {
-                "base": "packets/s"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 1100000,
-            "normal": 800000,
-            "caution": 0,
-            "alert": 0
-        },
-        {
-            "name": "ib_xmit_pkts",
-            "unit": {
-                "base": "packets/s"
-            },
-            "scope": "node",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 1100000,
-            "normal": 800000,
-            "caution": 0,
-            "alert": 0
-        },
-        {
-            "name": "nv_compute_processes",
-            "unit": {
-                "base": "processes"
-            },
-            "scope": "accelerator",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 50,
-            "caution": 80,
-            "alert": 90,
+            "peak": 12500,
+            "normal": 0,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
-                { "name": "cpu", "remove": true },
-                { "name": "cpu_abs2", "remove": true },
-                { "name": "fatcpu", "remove": true },
-                { "name": "tcpu", "remove": true }
-            ]
-        },
-        {
-            "name": "acc_utilization",
-            "unit": {
-                "base": "%",
-                "description": "GPU Utilization Percentage"
-            },
-            "scope": "accelerator",
-            "aggregation": "avg",
-            "footprint": "avg",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 90,
-            "caution": 70,
-            "alert": 60,
-            "subClusters": [
-                { "name": "cpu", "remove": true },
-                { "name": "cpu_abs2", "remove": true },
-                { "name": "fatcpu", "remove": true },
-                { "name": "tcpu", "remove": true }
+                { "name": "cpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "gpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 50000, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "vis", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tcpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "th200gpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tl40sgpu", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 12500, "normal": 0, "caution": -1000, "alert": -2000 }
             ]
         },
         {
@@ -502,20 +360,22 @@
             "scope": "accelerator",
             "aggregation": "sum",
             "timestep": 60,
-            "peak": 80,
-            "normal": 24,
-            "caution": 38,
-            "alert": 45,
+            "peak": 100,
+            "normal": 77.31,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
                 { "name": "cpu", "remove": true },
                 { "name": "cpu_abs2", "remove": true },
                 { "name": "fatcpu", "remove": true },
+                { "name": "gpu", "peak": 100, "normal": 77.31, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "fatgpu", "peak": 800, "normal": 687.19, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "vis", "peak": 60, "normal": 51.54, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "h200gpu", "peak": 1500, "normal": 1211.18, "caution": -1000, "alert": -2000, "restrict": false },
                 { "name": "tcpu", "remove": true },
-
-                { "name": "gpu", "scope": "accelerator", "aggregation": "sum", "timestep": 60, "peak": 80, "normal": 70, "caution": 71, "alert": 72 },
-                { "name": "fatgpu", "scope": "accelerator", "aggregation": "sum", "timestep": 60, "peak": 840, "normal": 638, "caution": 639, "alert": 640 },
-                { "name": "vis", "scope": "accelerator", "aggregation": "sum", "timestep": 60, "peak": 48, "normal": 47, "caution": 47, "alert": 48 },
-                { "name": "h200gpu", "scope": "accelerator", "aggregation": "sum", "timestep": 60, "peak": 1512, "normal": 1150, "caution": 1151, "alert": 1152 }
+                { "name": "th200gpu", "peak": 800, "normal": 605.59, "caution": -1000, "alert": -2000 },
+                { "name": "tl40sgpu", "peak": 250, "normal": 206.16, "caution": -1000, "alert": -2000 },
+                { "name": "tvis", "peak": 30, "normal": 25.77, "caution": -1000, "alert": -2000 }
             ]
         },
         {
@@ -527,61 +387,49 @@
             "aggregation": "sum",
             "timestep": 60,
             "energy": "power",
-            "peak": 300,
-            "normal": 150,
-            "caution": 250,
-            "alert": 280,
+            "peak": 1000,
+            "normal": 493,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
                 { "name": "cpu", "remove": true },
                 { "name": "cpu_abs2", "remove": true },
                 { "name": "fatcpu", "remove": true },
+                { "name": "gpu", "peak": 1000, "normal": 493, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
+                { "name": "fatgpu", "peak": 8000, "normal": 5580, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
+                { "name": "vis", "peak": 500, "normal": 290, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
+                { "name": "h200gpu", "peak": 8000, "normal": 5580, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
                 { "name": "tcpu", "remove": true },
-                { "name": "gpu", "scope": "accelerator", "aggregation": "sum", "energy": "power", "timestep": 60, "peak": 600, "normal": 493, "caution": 494, "alert": 495 },
-                { "name": "fatgpu", "scope": "accelerator", "aggregation": "sum", "energy": "power", "timestep": 60, "peak": 6000, "normal": 5580, "caution": 5590, "alert": 5600 },
-                { "name": "vis", "scope": "accelerator", "aggregation": "sum", "energy": "power", "timestep": 60, "peak": 400, "normal": 290, "caution": 295, "alert": 300 },
-                { "name": "h200gpu", "scope": "accelerator", "aggregation": "sum", "energy": "power", "timestep": 60, "peak": 6000, "normal": 5580, "caution": 5590, "alert": 5600 }
-            ]
-        },
-        {
-            "name": "acc_mem_util",
-            "unit": {
-                "base": "%",
-                "description": "GPU Memory Utilization Percentage"
-            },
-            "scope": "accelerator",
-            "aggregation": "avg",
-            "timestep": 60,
-            "peak": 100,
-            "normal": 80,
-            "caution": 50,
-            "alert": 20,
-            "subClusters": [
-                { "name": "cpu", "remove": true },
-                { "name": "cpu_abs2", "remove": true },
-                { "name": "fatcpu", "remove": true },
-                { "name": "tcpu", "remove": true }
+                { "name": "th200gpu", "peak": 4000, "normal": 2800, "caution": -1000, "alert": -2000, "energy": "power" },
+                { "name": "tl40sgpu", "peak": 2000, "normal": 1400, "caution": -1000, "alert": -2000, "energy": "power" },
+                { "name": "tvis", "peak": 300, "normal": 210, "caution": -1000, "alert": -2000, "energy": "power" }
             ]
         },
         {
             "name": "clock",
             "unit": {
-                "base": "MHz"
+                "base": "Hz",
+                "prefix": "M"
             },
             "scope": "hwthread",
             "aggregation": "avg",
             "timestep": 60,
-            "peak": 4980,
+            "peak": 6000,
             "normal": 4150,
-            "caution": 4150,
-            "alert": 4150,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
-                { "name": "fatcpu", "peak": 4560, "normal": 3800, "caution": 3800, "alert": 3800 },
-                { "name": "fatgpu", "peak": 4560, "normal": 3800, "caution": 3800, "alert": 3800 },
-                { "name": "h200gpu", "peak": 4500, "normal": 3750, "caution": 3750, "alert": 3750 },
-                { "name": "tcpu", "peak": 4440, "normal": 3700, "caution": 3700, "alert": 3700 },
-                { "name": "th200gpu", "peak": 5280, "normal": 4400, "caution": 4400, "alert": 4400 },
-                { "name": "tl40sgpu", "peak": 5160, "normal": 4300, "caution": 4300, "alert": 4300 },
-                { "name": "tvis", "peak": 5160, "normal": 4300, "caution": 4300, "alert": 4300 }
+                { "name": "cpu", "peak": 6000, "normal": 4150, "caution": -1000, "alert": -2000 },
+                { "name": "cpu_abs2", "peak": 6000, "normal": 4150, "caution": -1000, "alert": -2000 },
+                { "name": "fatcpu", "peak": 5000, "normal": 3800, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "gpu", "peak": 6000, "normal": 4150, "caution": -1000, "alert": -2000 },
+                { "name": "fatgpu", "peak": 5000, "normal": 3800, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "vis", "peak": 6000, "normal": 4150, "caution": -1000, "alert": -2000 },
+                { "name": "h200gpu", "peak": 5000, "normal": 3750, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tcpu", "peak": 6000, "normal": 3700, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "th200gpu", "peak": 6000, "normal": 4400, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tl40sgpu", "peak": 6000, "normal": 4300, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tvis", "peak": 6000, "normal": 4300, "caution": -1000, "alert": -2000, "restrict": false }
             ]
         },
         {
@@ -593,10 +441,23 @@
             "aggregation": "avg",
             "footprint": "avg",
             "timestep": 60,
-            "peak": 6,
-            "normal": 6,
-            "caution": 1,
-            "alert": 0
+            "peak": 8,
+            "normal": 0,
+            "caution": -1000,
+            "alert": -2000,
+            "subClusters": [
+                { "name": "cpu", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "cpu_abs2", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "fatcpu", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "gpu", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "fatgpu", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "vis", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "h200gpu", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "tcpu", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "th200gpu", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "tl40sgpu", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "tvis", "peak": 8, "normal": 0, "caution": -1000, "alert": -2000, "footprint": "avg" }
+            ]
         },
         {
             "name": "core_power",
@@ -607,131 +468,136 @@
             "aggregation": "sum",
             "energy": "power",
             "timestep": 60,
-            "peak": 480,
+            "peak": 600,
             "normal": 400,
-            "caution": 400,
-            "alert": 400,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
-                { "name": "fatcpu", "peak": 600, "normal": 580, "caution": 580, "alert": 580 },
-                { "name": "fatgpu", "peak": 600, "normal": 580, "caution": 580, "alert": 580 },
-                { "name": "h200gpu", "peak": 800, "normal": 720, "caution": 720, "alert": 720 },
-                { "name": "tcpu", "peak": 800, "normal": 640, "caution": 640, "alert": 640 },
-                { "name": "th200gpu", "peak": 480, "normal": 420, "caution": 420, "alert": 420 },
-                { "name": "tl40sgpu", "peak": 300, "normal": 300, "caution": 300, "alert": 300 },
-                { "name": "tvis", "peak": 600, "normal": 600, "caution": 600, "alert": 600 }
+                { "name": "cpu", "peak": 600, "normal": 400, "caution": -1000, "alert": -2000, "energy": "power" },
+                { "name": "cpu_abs2", "peak": 600, "normal": 400, "caution": -1000, "alert": -2000, "energy": "power" },
+                { "name": "fatcpu", "peak": 1000, "normal": 580, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
+                { "name": "gpu", "peak": 600, "normal": 400, "caution": -1000, "alert": -2000, "energy": "power" },
+                { "name": "fatgpu", "peak": 800, "normal": 580, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
+                { "name": "vis", "peak": 600, "normal": 400, "caution": -1000, "alert": -2000, "energy": "power" },
+                { "name": "h200gpu", "peak": 1000, "normal": 720, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
+                { "name": "tcpu", "peak": 2000, "normal": 640, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
+                { "name": "th200gpu", "peak": 800, "normal": 420, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
+                { "name": "tl40sgpu", "peak": 800, "normal": 300, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false },
+                { "name": "tvis", "peak": 1200, "normal": 600, "caution": -1000, "alert": -2000, "energy": "power", "restrict": false }
             ]
         },
         {
             "name": "flops_any",
             "unit": {
-                "base": "FLOPS",
+                "base": "F/s",
                 "prefix": "G"
             },
             "scope": "hwthread",
             "aggregation": "sum",
             "footprint": "avg",
             "timestep": 60,
-            "peak": 3200,
+            "peak": 4000,
             "normal": 3200,
-            "caution": 107,
-            "alert": 54,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
-                { "name": "fatcpu", "peak": 5800, "normal": 5809, "caution": 194, "alert": 97 },
-                { "name": "fatgpu", "peak": 5800, "normal": 5796, "caution": 194, "alert": 97 },
-                { "name": "h200gpu", "peak": 7600, "normal": 7607, "caution": 254, "alert": 127 },
-                { "name": "tcpu", "peak": 22400, "normal": 22393, "caution": 747, "alert": 374 },
-                { "name": "th200gpu", "peak": 9000, "normal": 8919, "caution": 298, "alert": 149 },
-                { "name": "tl40sgpu", "peak": 7900, "normal": 7860, "caution": 262, "alert": 131 },
-                { "name": "tvis", "peak": 16000, "normal": 15758, "caution": 526, "alert": 263 }
+                { "name": "cpu", "peak": 4000, "normal": 3200, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "cpu_abs2", "peak": 4000, "normal": 3200, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "fatcpu", "peak": 12000, "normal": 5809, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "gpu", "peak": 4000, "normal": 3200, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "fatgpu", "peak": 25000, "normal": 5796, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "vis", "peak": 4000, "normal": 3200, "caution": -1000, "alert": -2000, "footprint": "avg" },
+                { "name": "h200gpu", "peak": 10000, "normal": 7607, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tcpu", "peak": 30000, "normal": 22393, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "th200gpu", "peak": 15000, "normal": 8919, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tl40sgpu", "peak": 30000, "normal": 7860, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tvis", "peak": 20000, "normal": 15758, "caution": -1000, "alert": -2000, "restrict": false }
             ]
         },
-
         {
             "name": "flops_bf16",
             "unit": {
-                "base": "FLOPS",
+                "base": "F/s",
                 "prefix": "G"
             },
             "scope": "hwthread",
             "aggregation": "sum",
             "footprint": "avg",
             "timestep": 60,
-            "peak": 3000,
-            "normal": 3000,
-            "caution": 100,
-            "alert": 50,
+            "peak": 60000,
+            "normal": 44786,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
-                {"name": "cpu", "remove": true },
+                { "name": "cpu", "remove": true },
                 { "name": "cpu_abs2", "remove": true },
                 { "name": "fatcpu", "remove": true },
                 { "name": "gpu", "remove": true },
                 { "name": "fatgpu", "remove": true },
                 { "name": "vis", "remove": true },
                 { "name": "h200gpu", "remove": true },
-                { "name": "tcpu", "peak": 53800, "normal": 44786, "caution": 1493, "alert": 746 },
-                { "name": "tl40sgpu", "peak": 18900, "normal": 15720, "caution": 524, "alert": 262 },
-                { "name": "th200gpu", "peak": 21500, "normal": 17838, "caution": 595, "alert": 297 },
-                { "name": "tvis", "peak": 37900, "normal": 31516, "caution": 1051, "alert": 525 }
+                { "name": "tcpu", "peak": 60000, "normal": 44786, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "th200gpu", "peak": 25000, "normal": 17838, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tl40sgpu", "peak": 25000, "normal": 15720, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tvis", "peak": 50000, "normal": 31516, "caution": -1000, "alert": -2000, "restrict": false }
             ]
         },
-                {
-            "name": "flops_sp",
-            "unit": {
-                "base": "FLOPS",
+        {
+                    "name": "flops_sp",
+                    "unit": {
+                "base": "F/s",
                 "prefix": "G"
             },
-            "scope": "hwthread",
-            "aggregation": "sum",
-            "footprint": "avg",
-            "timestep": 60,
-            "peak": 3000,
-            "normal": 3000,
-            "caution": 100,
-            "alert": 50,
-            "subClusters": [
-                {"name": "cpu", "remove": true },
-                { "name": "cpu_abs2", "remove": true },
-                { "name": "fatcpu", "remove": true },
-                { "name": "gpu", "remove": true },
-                { "name": "fatgpu", "remove": true },
-                { "name": "vis", "remove": true },
-                { "name": "h200gpu", "remove": true },
-                { "name": "tcpu", "peak": 26900, "normal": 22393, "caution": 747, "alert": 374 },
-                { "name": "tl40sgpu", "peak": 9500, "normal": 7860, "caution": 262, "alert": 131 },
-                { "name": "th200gpu", "peak": 10800, "normal": 8919, "caution": 298, "alert": 149 },
-                { "name": "tvis", "peak": 19000, "normal": 15758, "caution": 526, "alert": 263 }
-            ]
-
-        },
-                {
-            "name": "flops_dp",
-            "unit": {
-                "base": "FLOPS",
+                    "scope": "hwthread",
+                    "aggregation": "sum",
+                    "footprint": "avg",
+                    "timestep": 60,
+                    "peak": 30000,
+                    "normal": 22393,
+                    "caution": -1000,
+                    "alert": -2000,
+                    "subClusters": [
+                        { "name": "cpu", "remove": true },
+                        { "name": "cpu_abs2", "remove": true },
+                        { "name": "fatcpu", "remove": true },
+                        { "name": "gpu", "remove": true },
+                        { "name": "fatgpu", "remove": true },
+                        { "name": "vis", "remove": true },
+                        { "name": "h200gpu", "remove": true },
+                        { "name": "tcpu", "peak": 30000, "normal": 22393, "caution": -1000, "alert": -2000, "restrict": false },
+                        { "name": "th200gpu", "peak": 12000, "normal": 8919, "caution": -1000, "alert": -2000, "restrict": false },
+                        { "name": "tl40sgpu", "peak": 15000, "normal": 7860, "caution": -1000, "alert": -2000, "restrict": false },
+                        { "name": "tvis", "peak": 25000, "normal": 15758, "caution": -1000, "alert": -2000, "restrict": false }
+                    ]
+                },
+        {
+                    "name": "flops_dp",
+                    "unit": {
+                "base": "F/s",
                 "prefix": "G"
             },
-            "scope": "hwthread",
-            "aggregation": "sum",
-            "footprint": "avg",
-            "timestep": 60,
-            "peak": 3000,
-            "normal": 3000,
-            "caution": 100,
-            "alert": 50,
-            "subClusters": [
-                {"name": "cpu", "remove": true },
-                { "name": "cpu_abs2", "remove": true },
-                { "name": "fatcpu", "remove": true },
-                { "name": "gpu", "remove": true },
-                { "name": "fatgpu", "remove": true },
-                { "name": "vis", "remove": true },
-                { "name": "h200gpu", "remove": true },
-                { "name": "tcpu", "peak": 13500, "normal": 11197, "caution": 373, "alert": 187 },
-                { "name": "tl40sgpu", "peak": 4800, "normal": 3930, "caution": 131, "alert": 66 },
-                { "name": "th200gpu", "peak": 5400, "normal": 4460, "caution": 149, "alert": 74 },
-                { "name": "tvis", "peak": 9500, "normal": 7879, "caution": 263, "alert": 131 }
-            ]
-
-        },
+                    "scope": "hwthread",
+                    "aggregation": "sum",
+                    "footprint": "avg",
+                    "timestep": 60,
+                    "peak": 15000,
+                    "normal": 11197,
+                    "caution": -1000,
+                    "alert": -2000,
+                    "subClusters": [
+                        { "name": "cpu", "remove": true },
+                        { "name": "cpu_abs2", "remove": true },
+                        { "name": "fatcpu", "remove": true },
+                        { "name": "gpu", "remove": true },
+                        { "name": "fatgpu", "remove": true },
+                        { "name": "vis", "remove": true },
+                        { "name": "h200gpu", "remove": true },
+                        { "name": "tcpu", "peak": 15000, "normal": 11197, "caution": -1000, "alert": -2000, "restrict": false },
+                        { "name": "th200gpu", "peak": 8000, "normal": 4460, "caution": -1000, "alert": -2000, "restrict": false },
+                        { "name": "tl40sgpu", "peak": 6000, "normal": 3930, "caution": -1000, "alert": -2000, "restrict": false },
+                        { "name": "tvis", "peak": 12000, "normal": 7879, "caution": -1000, "alert": -2000, "restrict": false }
+                    ]
+                },
         {
             "name": "node_total_power",
             "unit": {
@@ -740,46 +606,52 @@
             "scope": "node",
             "aggregation": "sum",
             "timestep": 60,
-            "peak": 11400,
-            "normal": 9500,
-            "caution": 9500,
-            "alert": 9500,
+            "peak": 1200,
+            "normal": 0,
+            "caution": -1000,
+            "alert": -2000,
             "subClusters": [
-                { "name": "cpu", "peak": 900, "normal": 750, "caution": 750, "alert": 750 },
-                { "name": "cpu_abs2", "peak": 900, "normal": 750, "caution": 750, "alert": 750 },
-                { "name": "gpu", "peak": 3600, "normal": 3000, "caution": 3000, "alert": 3000 },
-                { "name": "fatcpu", "peak": 2000, "normal": 1600, "caution": 1600, "alert": 1600 },
-                { "name": "fatgpu", "peak": 11400, "normal": 9500, "caution": 9500, "alert": 9500 },
-                { "name": "vis", "peak": 3300, "normal": 2700, "caution": 2700, "alert": 2700 },
-                { "name": "h200gpu", "peak": 11400, "normal": 9500, "caution": 9500, "alert": 9500 },
-                { "name": "tcpu", "peak": 2400, "normal": 2000, "caution": 2000, "alert": 2000 },
-                { "name": "tl40sgpu", "peak": 4200, "normal": 3500, "caution": 3500, "alert": 3500 },
-                { "name": "th200gpu", "peak": 11400, "normal": 9500, "caution": 9500, "alert": 9500 },
-                { "name": "tvis", "peak": 3600, "normal": 3000, "caution": 3000, "alert": 3000 }
+                { "name": "cpu", "peak": 1200, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "cpu_abs2", "peak": 1200, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "fatcpu", "peak": 2000, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "gpu", "peak": 3600, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "fatgpu", "peak": 11400, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "vis", "peak": 3300, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "h200gpu", "peak": 11400, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tcpu", "peak": 2400, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "th200gpu", "peak": 11400, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tl40sgpu", "peak": 4200, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false },
+                { "name": "tvis", "peak": 3600, "normal": 0, "caution": -1000, "alert": -2000, "restrict": false }
             ]
         },
-       {
-            "name": "job_mem_used",
-            "unit": { "base": "B", "prefix": "G" },
-            "scope": "hwthread",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 400,
-            "normal": 384,
-            "caution": 384,
-            "alert": 384,
-            "subClusters": [
-                { "name": "fatcpu", "peak": 2600, "normal": 2304, "caution": 2304, "alert": 2304 },
-                { "name": "cpu_abs2", "peak": 900, "normal": 768, "caution": 768, "alert": 768 },
-                { "name": "fatgpu", "peak": 1500, "normal": 1152, "caution": 1152, "alert": 1152 },
-                { "name": "vis", "peak": 1500, "normal": 1152, "caution": 1152, "alert": 1152 },
-                { "name": "h200gpu", "peak": 2700, "normal": 2304, "caution": 2304, "alert": 2304 },
-                { "name": "tcpu", "peak": 1800, "normal": 1536, "caution": 1536, "alert": 1536 },
-                { "name": "tl40sgpu", "peak": 900, "normal": 768, "caution": 768, "alert": 768 },
-                { "name": "th200gpu", "peak": 1800, "normal": 1536, "caution": 1536, "alert": 1536 },
-                { "name": "tvis", "peak": 900, "normal": 768, "caution": 768, "alert": 768 }
-            ]
-         }
+        {
+           "name": "job_mem_used",
+           "unit": {
+                "base": "B",
+                "prefix": "G"
+            },
+           "scope": "hwthread",
+           "aggregation": "sum",
+           "timestep": 60,
+           "peak": 412.32,
+           "normal": 412.32,
+           "caution": 391.7,
+           "alert": 404.07,
+           "subClusters": [
+               { "name": "cpu", "peak": 412.32, "normal": 412.32, "caution": 391.7, "alert": 404.07, "lowerIsBetter": true },
+               { "name": "cpu_abs2", "peak": 824.63, "normal": 824.63, "caution": 783.4, "alert": 808.14, "lowerIsBetter": true, "restrict": false },
+               { "name": "fatcpu", "peak": 2473.9, "normal": 2473.9, "caution": 2350.21, "alert": 2424.42, "lowerIsBetter": true, "restrict": false },
+               { "name": "gpu", "peak": 412.32, "normal": 412.32, "caution": 391.7, "alert": 404.07, "lowerIsBetter": true },
+               { "name": "fatgpu", "peak": 1236.95, "normal": 1236.95, "caution": 1175.1, "alert": 1212.21, "lowerIsBetter": true, "restrict": false },
+               { "name": "vis", "peak": 1236.95, "normal": 1236.95, "caution": 1175.1, "alert": 1212.21, "lowerIsBetter": true, "restrict": false },
+               { "name": "h200gpu", "peak": 2473.9, "normal": 2473.9, "caution": 2350.21, "alert": 2424.42, "lowerIsBetter": true, "restrict": false },
+               { "name": "tcpu", "peak": 1649.27, "normal": 1649.27, "caution": 1566.8, "alert": 1616.28, "lowerIsBetter": true, "restrict": false },
+               { "name": "th200gpu", "peak": 1649.27, "normal": 1649.27, "caution": 1566.8, "alert": 1616.28, "lowerIsBetter": true, "restrict": false },
+               { "name": "tl40sgpu", "peak": 824.63, "normal": 824.63, "caution": 783.4, "alert": 808.14, "lowerIsBetter": true, "restrict": false },
+               { "name": "tvis", "peak": 824.63, "normal": 824.63, "caution": 783.4, "alert": 808.14, "lowerIsBetter": true, "restrict": false }
+           ],
+           "lowerIsBetter": true
+       }
     ],
     "subClusters": [
 {
@@ -1305,14 +1177,8 @@
             [32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
           ],
           "memoryDomain": [
-            [0,1,2,3,4,5,6,7],
-            [8,9,10,11,12,13,14,15],
-            [16,17,18,19,20,21,22,23],
-            [24,25,26,27,28,29,30,31],
-            [32,33,34,35,36,37,38,39],
-            [40,41,42,43,44,45,46,47],
-            [48,49,50,51,52,53,54,55],
-            [56,57,58,59,60,61,62,63]
+              [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31],
+              [32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
           ],
           "core": [
             [0],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27],[28],[29],[30],[31],[32],[33],[34],[35],[36],[37],[38],[39],[40],[41],[42],[43],[44],[45],[46],[47],[48],[49],[50],[51],[52],[53],[54],[55],[56],[57],[58],[59],[60],[61],[62],[63]
@@ -1376,10 +1242,7 @@
             [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
           ],
           "memoryDomain": [
-            [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
-            [16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31],
-            [32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47],
-            [48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
+              [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
           ],
           "core": [
             [0],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27],[28],[29],[30],[31],[32],[33],[34],[35],[36],[37],[38],[39],[40],[41],[42],[43],[44],[45],[46],[47],[48],[49],[50],[51],[52],[53],[54],[55],[56],[57],[58],[59],[60],[61],[62],[63]
@@ -1443,14 +1306,8 @@
             [64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127]
           ],
           "memoryDomain": [
-            [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
-            [16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31],
-            [32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47],
-            [48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63],
-            [64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79],
-            [80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95],
-            [96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111],
-            [112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127]
+              [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63],
+              [64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127]
           ],
           "core": [
             [0],[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12],[13],[14],[15],[16],[17],[18],[19],[20],[21],[22],[23],[24],[25],[26],[27],[28],[29],[30],[31],[32],[33],[34],[35],[36],[37],[38],[39],[40],[41],[42],[43],[44],[45],[46],[47],[48],[49],[50],[51],[52],[53],[54],[55],[56],[57],[58],[59],[60],[61],[62],[63],[64],[65],[66],[67],[68],[69],[70],[71],[72],[73],[74],[75],[76],[77],[78],[79],[80],[81],[82],[83],[84],[85],[86],[87],[88],[89],[90],[91],[92],[93],[94],[95],[96],[97],[98],[99],[100],[101],[102],[103],[104],[105],[106],[107],[108],[109],[110],[111],[112],[113],[114],[115],[116],[117],[118],[119],[120],[121],[122],[123],[124],[125],[126],[127]

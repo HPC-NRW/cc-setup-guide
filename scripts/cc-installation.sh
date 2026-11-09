@@ -1,266 +1,87 @@
 #!/bin/bash
-
-# Setup script for ClusterCockpit cc-backend >= 1.5.
-
-# Exit on any error
+# Fresh installation only. See docs/monitoringserver.en.md for the manual path.
+set +x
 set -euo pipefail
-
-# Function to check for required commands
-check_dependencies() {
-    local missing_deps=()
-    local required_commands=(
-        openssl curl wget tar getent awk
-    )
-
-    for cmd in "${required_commands[@]}"; do
-        if ! command -v "$cmd" &> /dev/null; then
-            missing_deps+=("$cmd")
-        fi
-    done
-
-    if [ ${#missing_deps[@]} -ne 0 ]; then
-        echo "Error: The following required commands are not installed or not in your PATH:"
-        printf ' - %s\n' "${missing_deps[@]}"
-        echo "Please install them and try again."
-        exit 1
-    fi
-}
-
-# Run dependency check
-check_dependencies
-
-# Get the directory where the script is located
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
-# Default installation directory
-INSTALL_DIR="/opt/monitoring"
-CLUSTER_NAME=""
-SESSION_KEY=$(openssl rand -base64 32)
-ADMIN_USER="admin"
-ADMIN_PASS=$(openssl rand -base64 18)
-API_USER="apiuser"
-API_PASS=$(openssl rand -base64 18)
-CC_USER="clustercockpit"
-CC_GROUP="clustercockpit"
-
-# Function to display usage
+umask 077
 usage() {
-    echo "Usage: $0 -c <cluster_name> [-d <install_dir>] [-u <user:group>]"
-    echo "  -c  Cluster name (required)"
-    echo "  -d  Installation directory (default: /opt/monitoring)"
-    echo "  -u  User and group for the services (default: clustercockpit:clustercockpit)"
-    exit 1
+    cat <<'HELP'
+Usage: cc-installation.sh -c CLUSTER [-d DIRECTORY] [-u USER[:GROUP]] [-v VERSION]
+  -c  Cluster: [A-Za-z0-9][A-Za-z0-9_-]{0,63}
+  -d  New absolute directory, default /opt/monitoring; existing targets rejected
+  -u  Existing service account, default clustercockpit:clustercockpit
+  -v  Pinned backend release; default is backend.default in versions.json
+  -h  Show help
+Run as root on Linux x86_64. Dependencies: bash, python3 >= 3.9, curl,
+openssl, coreutils (install/id/uname/chown/chmod/mkdir/rm/dirname), getent.
+Directory components: letters, digits, underscore, hyphen and dot; no '.'/'..',
+symlinks, spaces, shell metacharacters or systemd specifiers. Parent must exist
+and be root-owned without group/other write access. No update/resume mode.
+HELP
 }
-
-# Function to check if directory is non-empty
-check_dir_non_empty() {
-    local dir=$1
-    if [ -d "$dir" ] && [ -n "$(ls -A "$dir")" ]; then
-        return 0
-    else
-        echo "Error: Directory $dir is empty or does not exist"
-        ls -l "$dir" 2>/dev/null || echo "Directory does not exist"
-        exit 1
-    fi
-}
-
-# Parse command line arguments
-while getopts "c:d:u:" opt; do
-    case $opt in
-        c) CLUSTER_NAME="$OPTARG" ;;
-        d) INSTALL_DIR="$OPTARG" ;;
-        u)
-            if [[ "$OPTARG" == *":"* ]]; then
-                CC_USER=$(echo "$OPTARG" | cut -d':' -f1)
-                CC_GROUP=$(echo "$OPTARG" | cut -d':' -f2)
-            else
-                CC_USER="$OPTARG"
-                CC_GROUP="$OPTARG"
-            fi
-            ;;
-        *) usage ;;
+INSTALL_DIR=/opt/monitoring
+CLUSTER_NAME=
+CC_USER=clustercockpit
+CC_GROUP=clustercockpit
+VERSION=
+while getopts ':c:d:u:v:h' option; do
+    case "$option" in
+        c) CLUSTER_NAME=$OPTARG ;;
+        d) INSTALL_DIR=$OPTARG ;;
+        u) CC_USER=${OPTARG%%:*}; CC_GROUP=${OPTARG#*:} ;;
+        v) VERSION=$OPTARG ;;
+        h) usage; exit 0 ;;
+        *) usage >&2; exit 2 ;;
     esac
 done
-
-# Check if cluster name is provided
-if [ -z "$CLUSTER_NAME" ]; then
-    echo "Error: Cluster name is required"
-    usage
+shift "$((OPTIND - 1))"
+if (( $# )); then usage >&2; exit 2; fi
+for command in python3 curl openssl install id uname chown chmod mkdir rm dirname getent; do
+    command -v "$command" >/dev/null || { echo "Missing dependency: $command" >&2; exit 1; }
+done
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+HELPER="$SCRIPT_DIR/install_support.py"
+GUIDE_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
+if [[ -z $VERSION ]]; then VERSION=$(python3 "$HELPER" default-version "$GUIDE_DIR"); fi
+# Read-only, including templates and every existing path component.
+python3 "$HELPER" preflight "$GUIDE_DIR" "$INSTALL_DIR" "$CLUSTER_NAME" "$CC_USER" "$CC_GROUP" "$VERSION"
+if [[ $(uname -s) != Linux || $(uname -m) != x86_64 ]]; then
+    echo 'Only Linux x86_64 release assets are supported.' >&2; exit 1
 fi
-
-# Check if user and group exist
-if ! id -u "$CC_USER" >/dev/null 2>&1; then
-    echo "Error: User '$CC_USER' not found. Please create it first."
-    exit 1
-fi
-
-if ! getent group "$CC_GROUP" >/dev/null 2>&1; then
-    echo "Error: Group '$CC_GROUP' not found. Please create it first."
-    exit 1
-fi
-
-# Create installation directory and subdirectories
-mkdir -p "$INSTALL_DIR"
-cd "$INSTALL_DIR"
-mkdir -p cc-backend
-
-# Function to get the latest release URL from GitHub
-get_latest_release() {
-    local repo=$1
-    local asset_pattern=$2
-    local url
-    url=$(curl -s https://api.github.com/repos/ClusterCockpit/$repo/releases/latest | \
-        grep "browser_download_url.*$asset_pattern" | \
-        cut -d '"' -f 4)
-    if [ -z "$url" ]; then
-        echo "Error: Could not find latest release for $repo with pattern $asset_pattern"
-        exit 1
-    fi
-    echo "$url"
-}
-
-# Download and extract cc-backend
-echo "Downloading cc-backend..."
-CC_BACKEND_URL=$(get_latest_release "cc-backend" "cc-backend_Linux_x86_64.tar.gz")
-wget --progress=dot:giga -O cc-backend.tar.gz "$CC_BACKEND_URL"
-if [ ! -s cc-backend.tar.gz ]; then
-    echo "Error: Downloaded cc-backend.tar.gz is empty or invalid"
-    exit 1
-fi
-mkdir -p cc-backend-tmp
-echo "Extracting cc-backend..."
-tar -xzf cc-backend.tar.gz -C cc-backend-tmp
-mv cc-backend-tmp/* cc-backend/ 2>/dev/null || mv cc-backend-tmp/cc-backend*/* cc-backend/ 2>/dev/null || true
-rm -rf cc-backend-tmp cc-backend.tar.gz
-check_dir_non_empty cc-backend
-echo "cc-backend directory contents:"
-ls -l cc-backend
-echo "cc-backend extracted successfully"
-
-# Create job archive directory for cluster.json
-mkdir -p "cc-backend/var/job-archive/$CLUSTER_NAME" # This is relative to $INSTALL_DIR
-
-# Generate JWT keypair
-echo "Generating JWT keypair..."
-pushd "$INSTALL_DIR/cc-backend"
-if [ ! -f ./gen-keypair ]; then
-    echo "Error: gen-keypair binary not found in cc-backend directory ($PWD)"
-    ls -l
-    exit 1
-fi
-chmod +x ./gen-keypair
-./gen-keypair >keypair.txt
-if [ ! -f keypair.txt ]; then
-    echo "Error: keypair.txt not generated by gen-keypair in $PWD"
-    exit 1
-fi
-JWT_PUBLIC_KEY=$(grep "ED25519 PUBLIC_KEY" keypair.txt | cut -d '"' -f 2)
-JWT_PRIVATE_KEY=$(grep "ED25519 PRIVATE_KEY" keypair.txt | cut -d '"' -f 2)
-if [ -z "$JWT_PUBLIC_KEY" ] || [ -z "$JWT_PRIVATE_KEY" ]; then
-    echo "Error: Could not extract JWT keys from keypair.txt"
-    cat keypair.txt
-    exit 1
-fi
-rm keypair.txt
-
-# Create cc-backend config.json from template
-echo "Creating cc-backend config.json from template..."
-BACKEND_CONFIG_TEMPLATE_FILE="$SCRIPT_DIR/templates/cc-backend.json.template"
-BACKEND_CONFIG_FILE="./config.json" 
-
-if [ ! -f "$BACKEND_CONFIG_TEMPLATE_FILE" ]; then
-    echo "Error: Template file '$BACKEND_CONFIG_TEMPLATE_FILE' not found!"
-    echo "SCRIPT_DIR is '$SCRIPT_DIR'. Please ensure 'templates/cc-backend.json.template' exists relative to SCRIPT_DIR."
-    exit 1
-fi
-cp "$BACKEND_CONFIG_TEMPLATE_FILE" "$BACKEND_CONFIG_FILE"
-sed -i "s/__CLUSTER_NAME__/$CLUSTER_NAME/g" "$BACKEND_CONFIG_FILE"
-
-# Create cluster.json from template
-echo "Creating cluster.json from template..."
-CLUSTER_JSON_TEMPLATE_FILE="$SCRIPT_DIR/templates/cluster.json.template"
-CLUSTER_JSON_FILE="./var/job-archive/$CLUSTER_NAME/cluster.json" 
-
-if [ ! -f "$CLUSTER_JSON_TEMPLATE_FILE" ]; then
-    echo "Error: Template file '$CLUSTER_JSON_TEMPLATE_FILE' not found!"
-    echo "SCRIPT_DIR is '$SCRIPT_DIR'. Please ensure 'templates/cluster.json.template' exists relative to SCRIPT_DIR."
-    exit 1
-fi
-cp "$CLUSTER_JSON_TEMPLATE_FILE" "$CLUSTER_JSON_FILE"
-sed -i "s/__CLUSTER_NAME__/$CLUSTER_NAME/g" "$CLUSTER_JSON_FILE"
-
-# Set environment variables for cc-backend
-cat > .env <<EOF
-SESSION_KEY="$SESSION_KEY"
-JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY"
-JWT_PUBLIC_KEY="$JWT_PUBLIC_KEY"
-EOF
-
-# Initialize database and add users
-echo "Initializing cc-backend database..."
-if [ ! -f ./cc-backend ]; then
-    echo "Error: cc-backend binary not found in cc-backend directory ($PWD)"
-    ls -l
-    exit 1
-fi
-chmod +x ./cc-backend
-./cc-backend -init
-echo 3 > ./var/job-archive/version.txt
-./cc-backend -migrate-db
-echo "Adding users..."
-./cc-backend -add-user "$ADMIN_USER:admin:$ADMIN_PASS"
-./cc-backend -add-user "$API_USER:api:$API_PASS"
-
-# Generate API key and store full output in apikey.txt
-echo "Generating API key..."
-./cc-backend -jwt "$API_USER" | tee apikey.txt
-
-# Store passwords
-echo "$ADMIN_PASS" > admin_password.txt 
-echo "$API_PASS" > apiuser_password.txt 
-
-popd # Back to $INSTALL_DIR
-
-echo "Generating systemd service files..."
-
-CC_BACKEND_SERVICE_TEMPLATE="$SCRIPT_DIR/templates/clustercockpit.service.template"
-CC_BACKEND_SERVICE_FILE="$INSTALL_DIR/clustercockpit.service"
-
-ESCAPED_INSTALL_DIR=$(printf '%s\n' "$INSTALL_DIR" | sed 's:[&/\\]:\\&:g') # Escape &, / and \
-
-# generate clustercockpit.service
-if [ -f "$CC_BACKEND_SERVICE_TEMPLATE" ]; then
-    cp "$CC_BACKEND_SERVICE_TEMPLATE" "$CC_BACKEND_SERVICE_FILE"
-    sed -i "s@__INSTALL_DIR__@$ESCAPED_INSTALL_DIR@g" "$CC_BACKEND_SERVICE_FILE"
-    sed -i "s/__CC_USER__/$CC_USER/g" "$CC_BACKEND_SERVICE_FILE"
-    sed -i "s/__CC_GROUP__/$CC_GROUP/g" "$CC_BACKEND_SERVICE_FILE"
-    echo "Generated: $CC_BACKEND_SERVICE_FILE"
-else
-    echo "Warning: Template file '$CC_BACKEND_SERVICE_TEMPLATE' not found. Skipping clustercockpit.service generation."
-fi
-
-echo "Changing ownership of $INSTALL_DIR to $CC_USER:$CC_GROUP..."
-chown -R "$CC_USER:$CC_GROUP" "$INSTALL_DIR"
-
-echo ""
-echo "Setup completed successfully!"
-echo "Admin user: $ADMIN_USER, password stored in $INSTALL_DIR/cc-backend/admin_password.txt"
-echo "API user: $API_USER, password stored in $INSTALL_DIR/cc-backend/apiuser_password.txt, JWT in $INSTALL_DIR/cc-backend/apikey.txt"
-echo "Installation directory: $INSTALL_DIR"
-echo "Services will run as user '$CC_USER' and group '$CC_GROUP'."
-echo ""
-echo "To start cc-backend: cd $INSTALL_DIR/cc-backend && ./cc-backend -server"
-echo ""
-echo "--- systemd Service Setup (requires root privileges) ---"
-echo "The following service files have been generated in '$INSTALL_DIR':"
-echo "  - clustercockpit.service"
-echo ""
-echo "To install and enable them, run the following commands as root:"
-echo "  sudo mv $INSTALL_DIR/clustercockpit.service /etc/systemd/system/"
-echo "  systemctl daemon-reload"
-echo "  systemctl enable clustercockpit.service"
-echo "  systemctl start clustercockpit.service"
-echo ""
-echo "To check their status:"
-echo "  systemctl status clustercockpit.service"
-echo "---------------------------------------------------------"
+# No -p: exclusively reserve the target against concurrent starts.
+mkdir -m 0700 -- "$INSTALL_DIR"
+trap 'echo "Installation interrupted. Private partial state retained at $INSTALL_DIR; inspect it before choosing a new empty target." >&2' ERR
+trap 'echo "Installation interrupted; private partial state retained." >&2; exit 130' INT
+trap 'echo "Installation interrupted; private partial state retained." >&2; exit 143' TERM
+install -d -m 0700 "$INSTALL_DIR/.install-tmp" "$INSTALL_DIR/cc-backend"
+TEMP_DIR="$INSTALL_DIR/.install-tmp"
+echo "Downloading pinned cc-backend $VERSION..."
+curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+    --connect-timeout 15 --max-time 120 --retry 2 \
+    "https://api.github.com/repos/ClusterCockpit/cc-backend/releases/tags/v$VERSION" > "$TEMP_DIR/release.json"
+URL=$(python3 "$HELPER" release-url "$GUIDE_DIR" "$VERSION" "$TEMP_DIR/release.json")
+curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+    --connect-timeout 15 --max-time 300 --retry 2 "$URL" > "$TEMP_DIR/backend.tar.gz"
+python3 "$HELPER" extract "$GUIDE_DIR" "$VERSION" "$TEMP_DIR/backend.tar.gz" "$INSTALL_DIR/cc-backend"
+python3 "$HELPER" render "$GUIDE_DIR" "$INSTALL_DIR" "$CLUSTER_NAME" "$CC_USER" "$CC_GROUP"
+cd "$INSTALL_DIR/cc-backend"
+./gen-keypair > "$TEMP_DIR/keypair.txt"
+python3 "$HELPER" environment "$TEMP_DIR/keypair.txt" .env
+rm -- "$TEMP_DIR/keypair.txt"
+# -init would overwrite custom configuration with upstream example credentials.
+# Create a fresh DB; render supplied the format marker for the NEW empty archive.
+./cc-backend -migrate-db > "$TEMP_DIR/database.log" 2>&1
+ADMIN_PASS=$(openssl rand -base64 24)
+API_PASS=$(openssl rand -base64 24)
+./cc-backend -add-user "admin:admin:$ADMIN_PASS" > "$TEMP_DIR/admin.log" 2>&1
+./cc-backend -add-user "apiuser:api:$API_PASS" > "$TEMP_DIR/apiuser.log" 2>&1
+printf '%s\n' "$ADMIN_PASS" > admin_password.txt
+printf '%s\n' "$API_PASS" > apiuser_password.txt
+unset ADMIN_PASS API_PASS
+./cc-backend -jwt apiuser > "$TEMP_DIR/jwt.txt" 2> "$TEMP_DIR/jwt.log"
+python3 "$HELPER" token "$TEMP_DIR/jwt.txt" apikey.txt
+rm -- "$TEMP_DIR/jwt.txt"
+python3 "$HELPER" finish "$INSTALL_DIR" "$CC_USER" "$CC_GROUP"
+trap - ERR INT TERM
+echo "Installed cc-backend $VERSION; database and two users created. No service started."
+echo "Private credentials: $INSTALL_DIR/cc-backend/{admin_password.txt,apiuser_password.txt,apikey.txt}"
+echo "Unit: $INSTALL_DIR/clustercockpit.service. Inspect configuration, then install the unit as documented."

@@ -1,0 +1,13 @@
+{
+  "add_tags": [
+    {
+      "key": "cluster",
+      "value": "__CLUSTER__",
+      "if": "*"
+    }
+  ],
+  "interval_timestamp": false,
+  "num_cache_intervals": 0,
+  "hostname_tag": "hostname",
+  "normalize_units": true
+}

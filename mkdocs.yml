@@ -1,10 +1,11 @@
 site_name: ClusterCockpit Setup Guide
 repo_url: https://github.com/hpc-nrw/cc-setup-guide
 repo_name: hpc-nrw/cc-setup-guide
-#site_url: https://hpc-nrw.github.io/cc-setup-guide
+site_url: https://hpc-nrw.github.io/cc-setup-guide/
 
 theme:
   name: material
+  custom_dir: overrides
   font: false
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -40,13 +41,15 @@ theme:
     - content.code.copy
     - content.tabs.link
     - content.tooltips
-    # Header-UX
-    - header.autohide
 
 extra_css:
   - stylesheets/extra.css
 
+extra_javascript:
+  - javascripts/accessibility.js
+
 markdown_extensions:
+  - admonition
   - pymdownx.snippets:
       base_path: docs
       check_paths: true
@@ -58,6 +61,9 @@ plugins:
         - de
   - i18n:
       docs_structure: suffix
+      # Preserve each language's article parents, even when their titles match.
+      # Languages are set explicitly above; deduplication would orphan sections.
+      reconfigure_search: false
       languages:
         - locale: en
           name: English
@@ -65,49 +71,73 @@ plugins:
           default: true
           nav:
             - Introduction: index.md
-            - Monitoring Server:
-               - Server Preparation: system_preparation.md
-               - Install Server Components: monitoringserver.md
-               - Migration 1.4.4 to 1.5.3: migration_1_4_4_to_1_5_3.md
-               - Webinterface: webinterface.md
-               - Create First Cluster & Define Subcluster: cluster_setup.md
-            - Metrics and Collectors:
-                - Set Up cc-metric-collector: cc_metric_collector_setup.md
-                - Quick Setup (Fast Track): cc_metric_collector_quicksetup.md
-                - Step-by-step Guides:
-                    - Step-by-step First Metric: metrics.md
-                    - Step-by-step Additional Metrics: more_metrics.md
-                - LIKWID Metrics: likwid_metrics.md
-                - Receive & Display Metrics: metric_receive_display.md
-            - Slurm:
-                - cc-slurm-adapter: slurm_adapter.md
-                - cc-slurm-sync: slurm_sync.md
-            - Operation & Troubleshooting: operation.md
-            - FAQ: faq.md
+            - Basic installation:
+                - System preparation: system_preparation.md
+                - Install the backend: monitoringserver.md
+                - First login: webinterface.md
+                - Define the first node: cluster_minimal.md
+                - HTTPS and API access: https_setup.md
+                - Install the collector: cc_metric_collector_setup.md
+                - Choose a configuration path:
+                    - Quick setup: cc_metric_collector_quicksetup.md
+                    - First metric in detail: metrics.md
+                - Run the collector as a service: collector_service.md
+            - Slurm and the first job:
+                - Choose an integration: slurm_setup.md
+                - Slurm 24.05 and later — adapter: slurm_adapter.md
+                - Check a complete test job: first_job.md
+            - Additional metrics:
+                - Detect hardware topology with LIKWID: cluster_setup.md
+                - Choose additional metrics: more_metrics.md
+                - LIKWID performance metrics: likwid_metrics.md
+                - Configure metric storage and display: metric_receive_display.md
+            - Operation and maintenance:
+                - Production settings: operation.md
+                - Users and passwords: user_accounts.md
+                - Backup and recovery: backup_restore.md
+                - Updates and version overview: updates.md
+                - Migration 1.4.4 to 1.5.3: migration_1_4_4_to_1_5_3.md
+            - Reference and troubleshooting:
+                - The path of a metric: metric_flow.md
+                - Units and validation: units.md
+                - Complete site examples: example_profiles.md
+                - Troubleshooting: faq.md
         - locale: de
           name: Deutsch
           build: true
           nav:
             - Einführung: index.md
-            - Monitoring Server:
-               - Servervorbereitung: system_preparation.md
-               - Server-Komponenten installieren: monitoringserver.md
-               - Migration von 1.4.4 auf 1.5.3: migration_1_4_4_to_1_5_3.md
-               - Webinterface: webinterface.md
-               - Ersten Cluster anlegen & Subcluster definieren: cluster_setup.md
-            - Metriken und Collectoren:
-                - cc-metric-collector einrichten: cc_metric_collector_setup.md
-                - Quick Setup (Schnellstart): cc_metric_collector_quicksetup.md
-                - Schritt-für-Schritt Anleitungen:
-                    - Schritt-für-Schritt Erste Metrik: metrics.md
-                    - Schritt-für-Schritt Weitere Metriken: more_metrics.md
-                - LIKWID Metriken: likwid_metrics.md
-                - Metriken empfangen & anzeigen: metric_receive_display.md
-            - Slurm:
-                - cc-slurm-adapter: slurm_adapter.md
-                - cc-slurm-sync: slurm_sync.md
-            - Produktivbetrieb: operation.md
-            - FAQ: faq.md
+            - Grundinstallation:
+                - Systeme vorbereiten: system_preparation.md
+                - Backend installieren: monitoringserver.md
+                - Erster Login: webinterface.md
+                - Ersten Knoten eintragen: cluster_minimal.md
+                - HTTPS und API-Zugriff: https_setup.md
+                - Collector installieren: cc_metric_collector_setup.md
+                - Konfigurationsweg wählen:
+                    - Schnellstart: cc_metric_collector_quicksetup.md
+                    - Erste Metrik im Detail: metrics.md
+                - Collector dauerhaft starten: collector_service.md
+            - Slurm und erster Job:
+                - Anbindung auswählen: slurm_setup.md
+                - Slurm ab 24.05 — Adapter: slurm_adapter.md
+                - Vollständigen Testjob prüfen: first_job.md
+            - Weitere Metriken:
+                - Hardwaretopologie mit LIKWID erfassen: cluster_setup.md
+                - Weitere Metriken auswählen: more_metrics.md
+                - LIKWID-Performancemetriken: likwid_metrics.md
+                - Speicherung und Anzeige konfigurieren: metric_receive_display.md
+            - Betrieb und Wartung:
+                - Einstellungen für den Betrieb: operation.md
+                - Benutzer und Passwörter: user_accounts.md
+                - Backup und Wiederherstellung: backup_restore.md
+                - Updates und Versionsübersicht: updates.md
+                - Migration von 1.4.4 auf 1.5.3: migration_1_4_4_to_1_5_3.md
+            - Referenz und Fehlersuche:
+                - Der Weg eines Messwerts: metric_flow.md
+                - Einheiten und Validierung: units.md
+                - Vollständige Standortbeispiele: example_profiles.md
+                - Fehlersuche: faq.md
   - minify:
       minify_html: true
   - redirects

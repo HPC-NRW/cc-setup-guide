@@ -1,0 +1,14 @@
+{
+  "backend": {
+    "type": "http",
+    "url": "https://__MONITORING_SERVER__/api/write/?cluster=__CLUSTER__",
+    "jwt": "__APIKEY__",
+    "precision": "s",
+    "meta_as_tags": [
+      "unit"
+    ],
+    "idle_connection_timeout": "60s",
+    "max_retries": 1,
+    "timeout": "10s"
+  }
+}

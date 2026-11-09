@@ -1,3 +1,24 @@
 site/
 .venv/
 __pycache__/
+*.swp
+*.swo
+*~
+.test-work/
+
+# Local credentials and runtime data
+.env
+.env.*
+!.env.example
+!.env.template
+apikey.txt
+token.txt
+*.key
+*.pem
+*.p12
+*.pfx
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.log

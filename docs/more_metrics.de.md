@@ -1,22 +1,46 @@
-# Schritt-für-Schritt: Weitere Metriken
+<a id="schritt-fur-schritt-weitere-metriken"></a>
 
-!!! info "Schritt-für-Schritt · Teil 2/2"
-    Dieses Kapitel baut direkt auf [Schritt-für-Schritt: Erste Metrik](metrics.de.md) auf.  
-    Arbeiten Sie zuerst Teil 1 durch, damit alle Basisdateien und Umbenennungen vorhanden sind.
+# Weitere Metriken auswählen
 
-Dies ist der zweite Teil der Schritt-für-Schritt-Reihe und baut auf der ersten Metrik (`cpu_load`) auf.  
-Eine Übersicht über alle verfügbaren Collectoren gibt es unter https://github.com/ClusterCockpit/cc-metric-collector/tree/main/collectors
+!!! info "Optionale Erweiterungen"
+    Voraussetzung ist eine funktionierende [erste Metrik](metrics.de.md). Die folgenden Rezepte erweitern dieses Setup nach Bedarf. Welche Collectoren sinnvoll sind, hängt von Hardware, Dateisystemen und den Fragen an das Job-Monitoring ab.
 
-In den READMEs jedes Collectors werden die erhebbaren Metriken und Konfigurationsmöglichkeiten aufgezeigt.  
-Sofern im jeweiligen Abschnitt nichts anderes erwähnt wird, gilt `scope: node`.
+| Bereich | Collectoren | Voraussetzungen und Scope |
+|---|---|---|
+| [CPU](#cpu) | `loadavg`, `schedstat` | Linux-Prozess- und CPU-Statistiken; `node` oder `hwthread` |
+| [Arbeitsspeicher](#arbeitsspeicher) | `memstat`, `slurm_cgroup` | Passende NUMA-Topologie; für Jobwerte lesbare Slurm-cgroups; `node`, `memoryDomain` oder `hwthread` |
+| [Lokaler Speicher](#lokaler-speicher) | `diskstat` | Passende Mount- und Gerätefilter; `node` |
+| [Netzwerk](#netzwerk) | `ibstat`, `netstat` | Vorhandene Interfaces; für Raten mindestens zwei Messungen; `node` |
+| [Dateisysteme](#filesysteme) | `lustrestat`, `nfsiostat` | Genutztes Dateisystem und dessen Werkzeuge; `node` |
+| [GPU](#gpu) | `nvidia` | NVIDIA-GPUs und Zugriff auf ihre Messwerte; `accelerator` |
 
-> Hinweis: In `cc-lib`-Versionen bis einschließlich `v0.10.1` mussten `drop_messages_if` und `change_unit_prefix` mit den *originalen* Metriknamen befüllt werden. Seit der aktuellen Version gelten die umbenannten Namen (also nach `rename_messages`). Die Beispiele unten orientieren sich an diesem neuen Verhalten.
+Die [offizielle Collector-Übersicht](https://github.com/ClusterCockpit/cc-metric-collector/tree/v0.8.4/collectors) beschreibt weitere Messwerte und Optionen. Sofern ein Rezept nichts anderes angibt, gilt `scope: node`. Die zusätzliche Erfassung von Hardwarezählern ist unter [LIKWID-Metriken](likwid_metrics.de.md) beschrieben.
+
+## Rezepte in die bestehende Konfiguration übernehmen
+
+Jede Erweiterung betrifft drei Stellen: den Collector, das Routing und den Eintrag in `cluster.json`. Der [Weg eines Messwerts](metric_flow.de.md) zeigt die beteiligten Dateien. Die [Backendkonfiguration](metric_receive_display.de.md#minimaler-eintrag) beschreibt Namen, Scope, Einheit, Aggregation und Intervall.
+
+Die Ausschnitte zeigen eine schrittweise wachsende Beispielkonfiguration. Einzelne Rezepte können unabhängig ausgewählt werden; ihre kumulativen Positivlisten enthalten teilweise auch Namen aus vorherigen Rezepten. In der eigenen Konfiguration muss die Positivliste alle bewusst aktivierten Zielmetriken einschließlich `cpu_load` enthalten.
+
+- Die vorhandene `stage_order` bleibt erhalten: zuerst umbenennen, dann filtern, Metadaten ergänzen und Einheiten skalieren.
+- Neue `rename_messages`- und `change_unit_prefix`-Einträge ergänzen die bestehenden Einträge. Bestehende `add_meta_if`-Regeln bleiben ebenfalls erhalten.
+- Ein vollständiger `drop_messages_if`-Block ersetzt die bisherige Liste. Benötigte Geräte- und Exportfilter dürfen dabei nicht verloren gehen.
+- Filter und Umrechnungen verwenden die Namen nach dem Routing. Der Backend-Eintrag muss genau zu diesem Namen und zum Scope passen.
+
+Nach jeder Erweiterung helfen die ungerundete stdout-Ausgabe, der Vergleich von Cluster-/Hostnamen und ein Blick auf die passende Node-Zeitreihe. Für abgeleitete Werte ist ein Lauf über mehrere Messintervalle nötig. Die Prüfung und der Übergang zum Dauerbetrieb stehen [am Ende dieser Seite](#konfiguration-prufen).
+
+<a id="cpustat"></a>
+<a id="numastats"></a>
+<a id="iostat"></a>
+<a id="nfs4stat"></a>
+
+Die Rezepte verwenden Einheiten des unveränderten Upstreamschemas. Prozentwerte, Paketraten und Operationszähler sind deshalb nicht Teil des Backendprofils. Das betrifft hier `cpustat`, `numastats`, `iostat` und `nfs4stat` sowie einzelne Werte der Netzwerk-, Lustre- und GPU-Collectoren. [Einheiten und Validierung](units.de.md) erklärt die Auswahl.
 
 ## CPU
 
 ### loadavg (Recap)
 
-Der Collector `loadavg` liefert `load_one`, `load_five`, `load_fifteen`, `proc_run` und `proc_total`. Für ClusterCockpit genügt weiterhin `load_one`, das in `cpu_load` umbenannt wird.  
+Der Collector `loadavg` liefert `load_one`, `load_five`, `load_fifteen`, `proc_run` und `proc_total`. Das Beispiel verwendet weiterhin nur `load_one` und benennt den Wert in `cpu_load` um.
 
 `collectors.json`:
 ```json
@@ -26,6 +50,17 @@ Der Collector `loadavg` liefert `load_one`, `load_five`, `load_fifteen`, `proc_r
 `router.json` (Auszug):
 ```json
 "process_messages": {
+  "stage_order": [
+    "add_tag",
+    "rename",
+    "rename_if",
+    "drop_by_type",
+    "drop_by_name",
+    "drop_if",
+    "add_meta",
+    "change_unit_prefix",
+    "normalize_unit"
+  ],
   "hostname_tag": "hostname",
   "rename_messages": {
     "load_one": "cpu_load"
@@ -35,43 +70,30 @@ Der Collector `loadavg` liefert `load_one`, `load_five`, `load_fifteen`, `proc_r
   ]
 }
 ```
-Die Positivliste in `drop_messages_if` und die `rename_messages` Liste wird im Laufe dieses Kapitels um weitere Metriken ergänzt. Sämtliche folgenden `drop_messages_if`- und `change_unit_prefix`-Blöcke beziehen sich weiterhin auf den Abschnitt `process_messages` in derselben `router.json`.
+Die folgenden Ausschnitte erweitern die Positivliste und die Umbenennungen in derselben `router.json`. Alle `drop_messages_if`- und `change_unit_prefix`-Blöcke gehören zu deren Abschnitt `process_messages`.
 
-### cpustat
-
-`cpustat` zapft `/proc/stat` an und liefert CPU-Zeiten pro Hardware-Thread. Für das Job-Monitoring genügt `cpu_user`, das die Nutzerzeit je Kern anzeigt (scope: `hwthread`). Die Messung wird automatisch auf jeden Hardware-Thread angewendet.
-
-`collectors.json`:
-```json
-"cpustat": {}
-```
-
-`router.json`:
-```json
-  "drop_messages_if": [
-    "!(name in ['cpu_load', 'cpu_user'])"
-  ]
-```
-Damit `cpu_user` erhalten bleibt, wird es der Positivliste `drop_messages_if` hinzugefügt (siehe Router-Auszug oben). Weitere vom Collector gelieferte Spalten wie `cpu_system` oder `cpu_idle` werden damit verworfen.
 
 ### schedstat
 
-Der Collector `schedstat` liefert `cpu_load_core`, das die Auslastung pro Kern (scope: `hwthread`) zeigt und falsches Pinning sichtbar macht.
+`schedstat` liefert mit `cpu_load_core` die dimensionslose Auslastung pro Hardware-Thread (`scope: hwthread`). Unterschiede zwischen Threads können auf unpassendes Pinning hinweisen.
 
 `collectors.json`:
+
 ```json
 "schedstat": {}
 ```
 
 `router.json`:
+
 ```json
-  "drop_messages_if": [
-    "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core'])"
-  ]
+"drop_messages_if": [
+  "!(name in ['cpu_load', 'cpu_load_core'])"
+]
 ```
+
 ##  Arbeitsspeicher
-## memstat
-Der Collector `memstat` sammelt einige Metriken aus `/proc/meminfo`:
+### memstat
+`memstat` liest unter anderem folgende Werte aus `/proc/meminfo`:
 ```
 MemTotal:       32278500 kB
 MemFree:         8472384 kB
@@ -79,22 +101,31 @@ MemAvailable:   19816380 kB
 Buffers:            6656 kB
 Cached:         12963688 kB
 ```
-Erfasst wird `mem_used` (=`mem_total`-(`mem_free` + `mem_buffers` + `mem_cached`)).
+Das Beispiel verwendet `mem_used`, berechnet als `mem_total − (mem_free + mem_buffers + mem_cached)`.
 
-Man kann konfigurieren, dass die Metriken auf Ebene der NUMA Subcluster erhoben werden (scope: memoryDomain), allerdings kann `cc-backend` in der Version aus dem `main`-Branch diese Werte nicht zuordnen.
+NUMA-Werte benötigen `scope: memoryDomain` und die passende Topologie in `cluster.json`. Das RUB-Beispiel speichert `mem_used` auf dieser Ebene. Die zusätzlich gelieferte Node-Metrik lässt sich unter demselben Namen nicht als zweite Speicherdimension ablegen.
 
 `collectors.json`:
 ```json
-  "memstat": {
-    "node_stats": true,
-    "numa_stats": true
-  }
+"memstat": {
+  "node_stats": true,
+  "numa_stats": true
+}
 ```
+
+Collector 0.8.4 übernimmt das Linux-Label `kB` unverändert, obwohl `/proc/meminfo` damit KiB bezeichnet. Die folgende Regel korrigiert deshalb nur für `mem_used` das Label zu `KiB`, bevor sie nach GB skaliert. So ergeben 1.048.576 Quelleinheiten 1,073741824 GB. Bestehende `add_meta_if`-Regeln bleiben erhalten; `add_meta` muss vor `change_unit_prefix` laufen. Die [Einheitenübersicht](units.de.md) erklärt den Unterschied genauer.
 
 `router.json`:
 ```json
 "drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used'])"
+  "!(name in ['cpu_load', 'cpu_load_core', 'mem_used'])"
+],
+"add_meta_if": [
+  {
+    "if": "name == 'mem_used' && meta.unit == 'kB'",
+    "key": "unit",
+    "value": "KiB"
+  }
 ],
 "change_unit_prefix": {
   "name == 'mem_used'": "G"
@@ -103,130 +134,83 @@ Man kann konfigurieren, dass die Metriken auf Ebene der NUMA Subcluster erhoben 
 
 ### slurm_cgroup
 
-Der Collector `slurm_cgroup` liest die von Slurm angelegten cgroups aus, ermittelt daraus den Arbeitsspeicherverbrauch pro Job und verteilt den Wert auf die vom Job belegten Kerne. Dadurch entsteht eine pro Hardware-Thread (`scope: hwthread`) sichtbare Metrik `job_mem_used`, die direkt mit den CPU-Kernen eines Jobs korreliert.
+Collector v0.8.4 legt `hwthread` als Scope fest; ein zusätzliches Configfeld `scope` ist ungültig. Erforderlich sind lesbare Slurm-cgroups und eine `cgroup_base`, die zum lokalen Layout passt. Die erste Prüfung erfolgt ohne `use_sudo` mit gezielten Leserechten. Eine pauschale sudo-Freigabe ist dafür nicht vorgesehen.
+
+`slurm_cgroup` liest den Arbeitsspeicherverbrauch aus den Slurm-cgroups eines Jobs und verteilt ihn auf dessen belegte Kerne. Die Metrik `job_mem_used` erscheint dadurch pro Hardware-Thread und lässt sich den CPU-Kernen des Jobs zuordnen.
 
 `collectors.json`:
 ```json
-"slurm_cgroup": {
-}
+"slurm_cgroup": {}
 ```
 
 `router.json`:
 ```json
 "drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used'])"
+  "!(name in ['cpu_load', 'cpu_load_core', 'mem_used', 'job_mem_used'])"
 ],
 "change_unit_prefix": {
   "name == 'job_mem_used'": "G"
 }
 ```
 
-### numastats
-
-`numastats` wertet `/sys/devices/system/node/node*/numastat` aus und liefert daraus abgeleitete Ereigniszähler pro Sekunde (`count/s`) für die einzelnen NUMA-Domains (`scope: memoryDomain`). Damit lässt sich schnell erkennen, ob Interleave-Strategien greifen oder Speicherzugriffe häufig außerhalb der lokalen NUMA-Domain stattfinden.
-
-`collectors.json`:
-
-```json
-"numastats": {
-  "send_abs_values": false,
-  "send_derived_values": true
-}
-```
-
-`router.json` (Auszug):
-
-```json
-"rename_messages": {
-  "numastats_interleave_hit_rate": "numastats_interleave_hit",
-  "numastats_local_node_rate": "numastats_local_node",
-  "numastats_numa_foreign_rate": "numastats_numa_foreign",
-  "numastats_numa_hit_rate": "numastats_numa_hit",
-  "numastats_numa_miss_rate": "numastats_numa_miss",
-  "numastats_other_node_rate": "numastats_other_node"
-},
-"drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node'])"
-]
-```
-
 
 ## Lokaler Speicher
-Für stateful Knoten bieten sich zwei Collectoren an:
+`diskstat` erfasst den freien Speicher einer ausgewählten lokalen Partition.
 ### diskstat
 
-Liest `/proc/self/mounts` aus und liefert pro Mountpunkt Festplattengröße (`disk_total`), freien Platz (`disk_free`) und Belegungsgrad (`part_max_used`). Dabei werden Mountpunkte mit `loop` und `boot` im Namen ignoriert.
-In der `collectors.json` können weitere zu exkludierende Mountpunkte angegeben werden, z.B. `log`:
+`diskstat` liest `/proc/self/mounts` und liefert pro Mountpunkt die Größe (`disk_total`), den freien Platz (`disk_free`) und den Belegungsgrad (`part_max_used`). Mountpunkte mit `loop` oder `boot` im Namen werden ignoriert.
+Weitere auszuschließende Mountpunkte stehen in `collectors.json`, hier beispielsweise `log`:
 
 ```json
 "diskstat": {
-    "exclude_mounts": [
-      "log"
-    ]
+  "exclude_mounts": [
+    "log"
+  ]
 }
 ```
 
-Erfasst wird ausschließlich `disk_free`.
+Das Beispiel übernimmt ausschließlich `disk_free`.
 
-Bei unserem Partitionslayout
+Für das folgende Partitionslayout
 ```bash
 /dev/nvme0n1p1 /boot/efi vfat rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=winnt,errors=remount-ro 0 0
 /dev/nvme0n1p2 / xfs rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,sunit=256,swidth=256,noquota 0 0
 /dev/nvme0n1p3 /var/log xfs rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,sunit=256,swidth=256,usrquota,prjquota,grpquota 0 0
 /dev/nvme0n1p4 /var/slurm-tmpfs xfs rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,sunit=256,swidth=256,usrquota,prjquota,grpquota 0 0
 ```
-werden noch zwei Nachrichten versendet:
+bleiben zwei Nachrichten übrig:
 ```bash
 disk_free,cluster=testcluster,device=/dev/nvme0n1p2,hostname=cpu001,type=node,unit=GB value=41u 1757426394108539349
 disk_free,cluster=testcluster,device=/dev/nvme0n1p4,hostname=cpu001,type=node,unit=GB value=869u 1757426394108546859
 ```
 
-Die beiden Nachrichten unterscheiden sich nur durch das `device`-Tag. Die Werte werden von `cc-backend` nicht aufsummiert. Es wird nur der Wert der ersten Nachricht verarbeitet. Da es sich um das Dateisystem "`/`" handelt, kann es mit `exclude_mounts` nicht herausgefiltert werden.
-Die Filterung erfolgt über den `messageProcessor`:
+Die Nachrichten unterscheiden sich nur im `device`-Tag. In dieser Konfiguration verarbeitet `cc-backend` für die Metrik nur die zuerst eingehende Nachricht; die Werte werden nicht addiert. Das Root-Dateisystem `/` lässt sich hier nicht über `exclude_mounts` herausfiltern.
+Der `messageProcessor` begrenzt die Ausgabe auf das gewünschte Gerät:
 
 ```json
 "drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free'])",
-
-  "name == 'disk_free' && tag.device != '/dev/nvme0n1p4'"
+  "!(name in ['cpu_load', 'cpu_load_core', 'mem_used', 'job_mem_used', 'disk_free'])",
+  "name == 'disk_free' && !(tag.device in ['/dev/nvme0n1p4', 'nvme0n1p4'])"
 ],
 "change_unit_prefix": {
   "name == 'disk_free'": "G"
 }
 ```
 
-Danach erhalten wir nur noch gewünschte Partition:
+Danach bleibt nur die gewünschte Partition:
 
 ```bash
 disk_free,cluster=testcluster,device=/dev/nvme0n1p4,hostname=cpu001,type=node,unit=GB value=869u 1757426394108546859
 ```
 
-### iostat
-
-Liest Daten zu I/O Statistiken aus `/proc/diskstats` aus. Dabei werden nur die Differenzwerte zur letzen Messung gesendet. Ähnlich wie bei `diskstat` filtern wir nur nach der gewünschten Partition. Außerdem interessieren uns nur `io_reads` und `io_writes`:
-
-`collectors.json`:
-```json
-"iostat": {}
-```
-
-`router.json`:
-```json
-"drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes'])",
-
-  "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
-],
-```
----
 
 ## Netzwerk
 
 ### ibstat
 
-Der Collector `ibstat` erfasst Link- und Traffic-Metriken für Highspeed-Interconnects unter Linux. Er funktioniert nicht nur mit InfiniBand, sondern auch mit Omni-Path, da beide ihre Geräte unter `/sys/class/infiniband/<dev>/ports/<port>/...` exponieren.
+`ibstat` erfasst Link- und Traffic-Metriken für InfiniBand und Omni-Path. Beide stellen ihre Geräte unter Linux über `/sys/class/infiniband/<dev>/ports/<port>/...` bereit.
 
-Standardmäßig werden absolute Zählerstände gesendet. Für eine aussagekräftige Zeitreihe benötigen wir Bandbreitenwerte, also pro Sekunde (abgeleitet aus Differenzen). Dafür schalten wir absolute Werte aus und abgeleitete Werte ein.
+Standardmäßig liefert der Collector absolute Zählerstände. Das Beispiel deaktiviert diese Werte und aktiviert abgeleitete Raten. Der Router übernimmt daraus nur die Bandbreiten in Byte pro Sekunde.
 
 `collectors.json`:
 
@@ -242,13 +226,11 @@ Standardmäßig werden absolute Zählerstände gesendet. Für eine aussagekräft
 ```json
 "rename_messages": {
   "ib_recv_bw": "ib_recv",
-  "ib_xmit_bw": "ib_xmit",
-  "ib_recv_pkts_bw": "ib_recv_pkts",
-  "ib_xmit_pkts_bw": "ib_xmit_pkts"
+  "ib_xmit_bw": "ib_xmit"
 },
 "drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts'])",
-  "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
+  "!(name in ['cpu_load', 'cpu_load_core', 'mem_used', 'job_mem_used', 'disk_free', 'ib_recv', 'ib_xmit'])",
+  "(name in ['disk_free']) && !(tag.device in ['/dev/nvme0n1p4', 'nvme0n1p4'])"
 ],
 "change_unit_prefix": {
   "name == 'ib_recv'": "M",
@@ -256,31 +238,28 @@ Standardmäßig werden absolute Zählerstände gesendet. Für eine aussagekräft
 }
 ```
 
-Hinweis: Abgeleitete Werte entstehen aus zwei Messungen. Diese Metriken erscheinen nicht, wenn `cc-metric-collector` mit der Option `-once` läuft.
+Abgeleitete Werte benötigen mindestens zwei Messungen. Bei einem Start mit `-once` erscheinen sie deshalb nicht.
 
 ---
 
 ### netstat
 
-Der Collector `netstat` liefert Netzwerkmetriken für Ethernet-Interfaces. Um eine einzige Konfiguration für heterogene Knotengruppen wiederzuverwenden kann man mehrere Namen angeben.
+`netstat` erfasst Netzwerkmetriken für Ethernet-Interfaces. Mehrere konfigurierte Interfacenamen erlauben eine gemeinsame Konfiguration für unterschiedliche Knotengruppen.
 
-Abgeleitete Werte werden aktiviert, damit die Bandbreiten direkt vorliegen. Der Collector liefert:
-
-* `net_bytes_in_bw`  Einheit bytes/s
-* `net_bytes_out_bw` Einheit bytes/s
-* `net_pkts_in_bw`   Einheit packets/s
-* `net_pkts_out_bw`  Einheit packets/s
+Das Beispiel übernimmt die Bandbreiten `net_bytes_in_bw` und `net_bytes_out_bw` in Byte/s. Paketraten werden vom Router verworfen.
 
 `collectors.json`:
 
 ```json
 "netstat": {
   "include_devices": [
-    "eth0", "eno1", "eno1no0"
-    ],
+    "eth0",
+    "eno1",
+    "eno1no0"
+  ],
   "send_abs_values": false,
-  "send_derived_values": true,
-  }
+  "send_derived_values": true
+}
 ```
 
 `router.json`:
@@ -288,13 +267,11 @@ Abgeleitete Werte werden aktiviert, damit die Bandbreiten direkt vorliegen. Der 
 ```json
 "rename_messages": {
   "net_bytes_in_bw": "net_bytes_in",
-  "net_bytes_out_bw": "net_bytes_out",
-  "net_pkts_in_bw": "net_pkts_in",
-  "net_pkts_out_bw": "net_pkts_out"
+  "net_bytes_out_bw": "net_bytes_out"
 },
 "drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out'])",
-  "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
+  "!(name in ['cpu_load', 'cpu_load_core', 'mem_used', 'job_mem_used', 'disk_free', 'ib_recv', 'ib_xmit', 'net_bytes_in', 'net_bytes_out'])",
+  "(name in ['disk_free']) && !(tag.device in ['/dev/nvme0n1p4', 'nvme0n1p4'])"
 ],
 "change_unit_prefix": {
   "name == 'net_bytes_in'": "M",
@@ -302,7 +279,7 @@ Abgeleitete Werte werden aktiviert, damit die Bandbreiten direkt vorliegen. Der 
 }
 ```
 
-Die zuvor definierte `rename_messages`-Liste sorgt dafür, dass die Bandbreitenkennzahlen als `net_bytes_*` bzw. `net_pkts_*` geführt werden.
+Die `rename_messages`-Einträge geben den Bandbreiten die Zielnamen `net_bytes_in` und `net_bytes_out`.
 
 ---
 
@@ -310,27 +287,24 @@ Die zuvor definierte `rename_messages`-Liste sorgt dafür, dass die Bandbreitenk
 
 ### lustrestat
 
-Der Collector `lustrestat` verwendet das Kommando `lctl` und liefert Statistiken zu Lustre-Clients. Standardmäßig werden eine Vielzahl von Countern erhoben.
-Für die meisten Anwendungsfälle reicht es, sich auf folgende Metriken zu konzentrieren:
-
-* `lustre_read_bw` (Lese-Bandbreite in bytes/sec)
-* `lustre_write_bw` (Schreib-Bandbreite in bytes/sec)
-* `lustre_open` (Anzahl geöffneter Dateien seit der letzten Messung)
-* `lustre_close` (Anzahl geschlossener Dateien seit der letzten Messung)
-* `lustre_statfs` (Differenzen aus `statfs`-Aufrufen)
+`lustrestat` liest mit `lctl` die Lustre-Client-Statistik. Das Beispiel übernimmt `lustre_read_bw` und `lustre_write_bw`, also die Lese- und Schreibbandbreite in Byte/s. Operationszähler bleiben ausgeschlossen.
 
 `collectors.json`:
 
 ```json
-"lustrestat": {}
+"lustrestat": {
+  "send_abs_values": false,
+  "send_diff_values": false,
+  "send_derived_values": true
+}
 ```
 
 `router.json`:
 
 ```json
 "drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out', 'lustre_read_bw', 'lustre_write_bw', 'lustre_open', 'lustre_close', 'lustre_statfs'])",
-  "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
+  "!(name in ['cpu_load', 'cpu_load_core', 'mem_used', 'job_mem_used', 'disk_free', 'ib_recv', 'ib_xmit', 'net_bytes_in', 'net_bytes_out', 'lustre_read_bw', 'lustre_write_bw'])",
+  "(name in ['disk_free']) && !(tag.device in ['/dev/nvme0n1p4', 'nvme0n1p4'])"
 ],
 "change_unit_prefix": {
   "name == 'lustre_read_bw'": "M",
@@ -340,51 +314,31 @@ Für die meisten Anwendungsfälle reicht es, sich auf folgende Metriken zu konze
 
 ---
 
-### nfs4stat
-
-Der Collector `nfs4stat` basiert auf dem Kommando `nfsstat` und erhebt NFSv4-Client-Counter.
-Im Vordergrund stehen die Dateizugriffszähler:
-
-* `open_diff` (Anzahl der Dateiöffnungen seit letzter Messung)
-* `close_diff` (Anzahl der Dateischließungen seit letzter Messung)
-
-`collectors.json`:
-
-```json
-"nfs4stat": {}
-```
-
-`router.json`:
-
-```json
-"drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out', 'lustre_read_bw', 'lustre_write_bw', 'lustre_open', 'lustre_close', 'lustre_statfs', 'open_diff', 'close_diff'])",
-  "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
-]
-```
-
----
 
 ### nfsiostat
 
-Der Collector `nfsiostat` liefert detaillierte Statistiken für NFS-Mounts, ähnlich dem bekannten Kommando `nfsiostat`.
-Der Schwerpunkt liegt auf den abgeleiteten Bandbreiten:
-
-* `nfsio_nread` (gelesene Daten in bytes/s)
-* `nfsio_nwrite` (geschriebene Daten in bytes/s)
+`nfsiostat` liefert Statistiken für NFS-Mounts. Das Beispiel übernimmt die abgeleiteten Lese- und Schreibbandbreiten `nfsio_nread` und `nfsio_nwrite` in Byte/s.
 
 `collectors.json`:
 
 ```json
-"nfsiostat": {}
+"nfsiostat": {
+  "send_abs_values": false,
+  "send_derived_values": true,
+  "use_server_as_stype": true
+}
 ```
 
 `router.json`:
 
 ```json
+"rename_messages": {
+  "nfsio_nread_bw": "nfsio_nread",
+  "nfsio_nwrite_bw": "nfsio_nwrite"
+},
 "drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out', 'lustre_read_bw', 'lustre_write_bw', 'lustre_open', 'lustre_close', 'lustre_statfs', 'open_diff', 'close_diff', 'nfsio_nread', 'nfsio_nwrite'])",
-  "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
+  "!(name in ['cpu_load', 'cpu_load_core', 'mem_used', 'job_mem_used', 'disk_free', 'ib_recv', 'ib_xmit', 'net_bytes_in', 'net_bytes_out', 'lustre_read_bw', 'lustre_write_bw', 'nfsio_nread', 'nfsio_nwrite'])",
+  "name == 'disk_free' && !(tag.device in ['/dev/nvme0n1p4', 'nvme0n1p4'])"
 ],
 "change_unit_prefix": {
   "name == 'nfsio_nread'": "M",
@@ -396,7 +350,7 @@ Der Schwerpunkt liegt auf den abgeleiteten Bandbreiten:
 
 ### nvidia
 
-Der Collector `nvidia` liefert zentrale GPU-Kennzahlen wie Auslastung, Speichernutzung und Leistungsaufnahme. Über optionale Flags lassen sich MIG-Geräte vereinfachen und zusätzliche Metadaten unterdrücken, damit das Datenvolumen überschaubar bleibt.
+`nvidia` erfasst GPU-Messwerte. Das Beispiel übernimmt Speicherbelegung und Leistungsaufnahme; Prozentwerte und Prozesszähler werden verworfen. Die optionalen Flags im Beispiel vereinfachen MIG-Geräte und unterdrücken zusätzliche Metadaten, um das Datenvolumen zu begrenzen.
 
 Scope: `accelerator`
 
@@ -419,14 +373,12 @@ Scope: `accelerator`
 
 ```json
 "rename_messages": {
-  "nv_util": "acc_utilization",
   "nv_fb_mem_used": "acc_mem_used",
-  "nv_power_usage": "acc_power",
-  "nv_mem_util": "acc_mem_util"
+  "nv_power_usage": "acc_power"
 },
 "drop_messages_if": [
-  "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out', 'lustre_read_bw', 'lustre_write_bw', 'lustre_open', 'lustre_close', 'lustre_statfs', 'open_diff', 'close_diff', 'nfsio_nread', 'nfsio_nwrite', 'acc_utilization', 'acc_mem_used', 'acc_power', 'acc_mem_util', 'nv_compute_processes'])",
-  "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
+  "!(name in ['cpu_load', 'cpu_load_core', 'mem_used', 'job_mem_used', 'disk_free', 'ib_recv', 'ib_xmit', 'net_bytes_in', 'net_bytes_out', 'lustre_read_bw', 'lustre_write_bw', 'nfsio_nread', 'nfsio_nwrite', 'acc_mem_used', 'acc_power'])",
+  "(name in ['disk_free']) && !(tag.device in ['/dev/nvme0n1p4', 'nvme0n1p4'])"
 ],
 "change_unit_prefix": {
   "name == 'acc_mem_used'": "G"
@@ -436,7 +388,9 @@ Scope: `accelerator`
 <details>
 <summary><strong>customcmd: Eigene Skripte einbinden</strong></summary>
 
-Wenn kein dedizierter Collector existiert, kann `customcmd` ein beliebiges Skript starten und dessen Ausgabe als Metrik übernehmen. So lassen sich individuelle Sensoren oder Spezialfälle unkompliziert einbinden. Das Skript muss lediglich ausführbar sein und die Ausgabe im passenden Format liefern. Das folgende Beispiel liest die Gesamtleistungsaufnahme eines Knotens über `ipmi-sensors` aus und sendet sie im InfluxDB Line Protocol als `node_total_power` weiter:
+`customcmd` übernimmt die Ausgabe eines ausführbaren Skripts als Metrik. Das folgende Beispiel liest die Gesamtleistungsaufnahme eines Knotens mit `ipmi-sensors` und gibt sie als `node_total_power` im InfluxDB Line Protocol aus.
+
+Das veröffentlichte CPU-Profil aktiviert diesen optionalen Collector nicht. Eine lokale Einrichtung benötigt passende Sensoren, Berechtigungen und einen Clusternamen. Außerdem muss das Skript über `customcmd` eingebunden sein und `node_total_power` sowohl in der Router-Positivliste als auch in `cluster.json` vorkommen.
 
 ```bash
 #!/bin/bash
@@ -473,125 +427,152 @@ echo "node_total_power,cluster=elysium,hostname=${host},type=node,unit=W value=$
 
 ---
 <details>
-<summary><strong>bis hierher erstellte collectors.json</strong></summary>
+<summary><strong>Vollständige collectors.json des Beispiels</strong></summary>
 
 ```json
-    {
-      "loadavg": {},
-      "cpustat": {},
-      "schedstat": {},
-      "memstat": {
-        "node_stats": true,
-        "numa_stats": true
-      },
-      "slurm_cgroup": {
-        "scope": "hwthread"
-      },
-      "numastats": {
-        "send_abs_values": false,
-        "send_derived_values": true
-      },
-      "diskstat": {
-        "exclude_mounts": [
-          "log"
-        ]
-      },
-      "iostat": {},
-      "ibstat": {
-        "send_abs_values": false,
-        "send_derived_values": true
-      },
-      "netstat": {
-        "include_devices": [
-          "eth0",
-          "eno1",
-          "eno1no0"
-        ],
-        "send_abs_values": false,
-        "send_derived_values": true
-      },
-      "lustrestat": {},
-      "nfs4stat": {},
-      "nfsiostat": {},
-      "nvidia": {
-        "process_mig_devices": false,
-        "use_pci_info_as_type_id": true,
-        "add_pci_info_tag": true,
-        "add_uuid_meta": false,
-        "add_board_number_meta": false,
-        "add_serial_meta": false,
-        "use_uuid_for_mig_device": false,
-        "use_slice_for_mig_device": false
-      }
-    }
+{
+  "loadavg": {},
+  "schedstat": {},
+  "memstat": {
+    "node_stats": true,
+    "numa_stats": true
+  },
+  "slurm_cgroup": {},
+  "diskstat": {
+    "exclude_mounts": [
+      "log"
+    ]
+  },
+  "ibstat": {
+    "send_abs_values": false,
+    "send_derived_values": true
+  },
+  "netstat": {
+    "include_devices": [
+      "eth0",
+      "eno1",
+      "eno1no0"
+    ],
+    "send_abs_values": false,
+    "send_derived_values": true
+  },
+  "lustrestat": {
+    "send_abs_values": false,
+    "send_diff_values": false,
+    "send_derived_values": true
+  },
+  "nfsiostat": {
+    "send_abs_values": false,
+    "send_derived_values": true,
+    "use_server_as_stype": true
+  },
+  "nvidia": {
+    "process_mig_devices": false,
+    "use_pci_info_as_type_id": true,
+    "add_pci_info_tag": true,
+    "add_uuid_meta": false,
+    "add_board_number_meta": false,
+    "add_serial_meta": false,
+    "use_uuid_for_mig_device": false,
+    "use_slice_for_mig_device": false
+  }
+}
 ```
 
 </details>
 
 <details>
-<summary><strong>Beispiel: bis hierher erstellte router.json</strong></summary>
+<summary><strong>Vollständige router.json des Beispiels</strong></summary>
 
 ```json
+{
+  "add_tags": [
     {
-      "add_tags": [
-        {
-          "key": "cluster",
-          "value": "__CLUSTER__",
-          "if": "*"
-        }
-      ],
-      "interval_timestamp": false,
-      "num_cache_intervals": 0,
-      "hostname_tag": "hostname",
-      "normalize_units": true,
-      "process_messages": {
-        "rename_messages": {
-          "load_one": "cpu_load",
-          "net_bytes_in_bw": "net_bytes_in",
-          "net_bytes_out_bw": "net_bytes_out",
-          "net_pkts_in_bw": "net_pkts_in",
-          "net_pkts_out_bw": "net_pkts_out",
-          "ib_recv_bw": "ib_recv",
-          "ib_xmit_bw": "ib_xmit",
-          "ib_recv_pkts_bw": "ib_recv_pkts",
-          "ib_xmit_pkts_bw": "ib_xmit_pkts",
-          "lustre_open_diff": "lustre_open",
-          "lustre_close_diff": "lustre_close",
-          "lustre_statfs_diff": "lustre_statfs",
-          "nv_util": "acc_utilization",
-          "nv_fb_mem_used": "acc_mem_used",
-          "nv_power_usage": "acc_power",
-          "nv_mem_util": "acc_mem_util",
-          "nfsio_nread_bw": "nfsio_nread",
-          "nfsio_nwrite_bw": "nfsio_nwrite",
-          "numastats_interleave_hit_rate": "numastats_interleave_hit",
-          "numastats_local_node_rate": "numastats_local_node",
-          "numastats_numa_foreign_rate": "numastats_numa_foreign",
-          "numastats_numa_hit_rate": "numastats_numa_hit",
-          "numastats_numa_miss_rate": "numastats_numa_miss",
-          "numastats_other_node_rate": "numastats_other_node"
-        },
-        "drop_messages_if": [
-          "!(name in ['cpu_load', 'cpu_user', 'cpu_load_core', 'mem_used', 'job_mem_used', 'numastats_interleave_hit', 'numastats_local_node', 'numastats_numa_foreign', 'numastats_numa_hit', 'numastats_numa_miss', 'numastats_other_node', 'disk_free', 'io_reads', 'io_writes', 'ib_recv', 'ib_xmit', 'ib_recv_pkts', 'ib_xmit_pkts', 'net_bytes_in', 'net_bytes_out', 'net_pkts_in', 'net_pkts_out', 'lustre_read_bw', 'lustre_write_bw', 'lustre_open', 'lustre_close', 'lustre_statfs', 'open_diff', 'close_diff', 'nfsio_nread', 'nfsio_nwrite', 'acc_utilization', 'acc_mem_used', 'acc_power', 'acc_mem_util', 'nv_compute_processes'])",
-          "(name in ['disk_free', 'io_reads', 'io_writes']) && tag.device != '/dev/nvme0n1p4'"
-        ],
-        "change_unit_prefix": {
-          "name == 'mem_used'": "G",
-          "name == 'job_mem_used'": "G",
-          "name == 'disk_free'": "G",
-          "name == 'ib_recv'": "M",
-          "name == 'ib_xmit'": "M",
-          "name == 'net_bytes_in'": "M",
-          "name == 'net_bytes_out'": "M",
-          "name == 'lustre_read_bw'": "M",
-          "name == 'lustre_write_bw'": "M",
-          "name == 'nfsio_nread'": "M",
-          "name == 'nfsio_nwrite'": "M",
-          "name == 'acc_mem_used'": "G"
-        }
-      }
+      "key": "cluster",
+      "value": "__CLUSTER__",
+      "if": "*"
     }
+  ],
+  "interval_timestamp": false,
+  "num_cache_intervals": 0,
+  "hostname_tag": "hostname",
+  "normalize_units": true,
+  "process_messages": {
+    "stage_order": [
+      "add_tag",
+      "rename",
+      "rename_if",
+      "drop_by_type",
+      "drop_by_name",
+      "drop_if",
+      "add_meta",
+      "change_unit_prefix",
+      "normalize_unit"
+    ],
+    "rename_messages": {
+      "load_one": "cpu_load",
+      "net_bytes_in_bw": "net_bytes_in",
+      "net_bytes_out_bw": "net_bytes_out",
+      "ib_recv_bw": "ib_recv",
+      "ib_xmit_bw": "ib_xmit",
+      "nv_fb_mem_used": "acc_mem_used",
+      "nv_power_usage": "acc_power",
+      "nfsio_nread_bw": "nfsio_nread",
+      "nfsio_nwrite_bw": "nfsio_nwrite"
+    },
+    "drop_messages_if": [
+      "!(name in ['cpu_load', 'cpu_load_core', 'mem_used', 'job_mem_used', 'disk_free', 'ib_recv', 'ib_xmit', 'net_bytes_in', 'net_bytes_out', 'lustre_read_bw', 'lustre_write_bw', 'nfsio_nread', 'nfsio_nwrite', 'acc_mem_used', 'acc_power'])",
+      "(name in ['disk_free']) && !(tag.device in ['/dev/nvme0n1p4', 'nvme0n1p4'])"
+    ],
+    "add_meta_if": [
+      {
+        "if": "name == 'mem_used' && meta.unit == 'kB'",
+        "key": "unit",
+        "value": "KiB"
+      }
+    ],
+    "change_unit_prefix": {
+      "name == 'mem_used'": "G",
+      "name == 'job_mem_used'": "G",
+      "name == 'disk_free'": "G",
+      "name == 'ib_recv'": "M",
+      "name == 'ib_xmit'": "M",
+      "name == 'net_bytes_in'": "M",
+      "name == 'net_bytes_out'": "M",
+      "name == 'lustre_read_bw'": "M",
+      "name == 'lustre_write_bw'": "M",
+      "name == 'nfsio_nread'": "M",
+      "name == 'nfsio_nwrite'": "M",
+      "name == 'acc_mem_used'": "G"
+    }
+  }
+}
 ```
 </details>
 
-Als letztes fehlen nur noch die [LIKWID Metriken](likwid_metrics.de.md).
+Weitere hardwareabhängige Erweiterungen stehen unter [LIKWID-Metriken](likwid_metrics.de.md). Die [RUB-Beispielkonfiguration](example_profiles.de.md) zeigt ein vollständiges Standortprofil.
+
+
+## Konfiguration prüfen
+
+Nach dem Kopieren des vollständigen Routers muss die Standortidentität erneut gesetzt werden. Dafür gelten dieselben Cluster-/HTTPS-Zielwerte und dieselbe geschützte Tokendatei wie im Setup. `__CLUSTER__` ist ein Platzhalter und darf nicht stehen bleiben. Der einmalige stdout-Test prüft `cpu_load`, Cluster und Hostname. Abgeleitete Metriken sind bei diesem Aufruf noch nicht zu erwarten.
+
+Hilfsskript [configure-collector.py öffnen oder herunterladen](scripts/configure-collector.py).
+
+```bash
+python3 "$GUIDE_DIR/docs/scripts/configure-collector.py" \
+  --directory "$COLLECTOR_DIR" --cluster demo_cluster \
+  --url 'https://monitoring.example.org/api/write/?cluster=demo_cluster' \
+  --token-file "$TOKEN_FILE"
+cd "$COLLECTOR_DIR"
+./cc-metric-collector -config ./config_stdout.json -once
+```
+
+
+Für abgeleitete Metriken läuft der Collector anschließend über mehrere Messintervalle:
+
+```bash
+./cc-metric-collector -config ./config_stdout.json
+```
+
+Der Lauf endet mit `Strg+C`. Die Ausgabe muss jetzt zusätzlich die bewusst aktivierten Metriken mit passenden Namen, Einheiten und Hardware-IDs enthalten. Ein Vergleich mit [Einheiten und Validierung](units.de.md) hilft, doppelte Umrechnungen und falsche Scopes zu erkennen. Nach dem Eintrag der Metriken im Backend und der [Prüfung des Empfangs](metric_receive_display.de.md) folgt der [Collector als Dienst](collector_service.de.md).

@@ -1,0 +1,14 @@
+digraph metric_flow {
+graph [rankdir=TB, bgcolor="white", pad="0.2", nodesep="0.35", ranksep="0.35"];
+node [shape=box, style="rounded,filled", fillcolor="#f1f3f9", color="#3c4466", fontcolor="#202536", fontname="Arial", fontsize=13, margin="0.16,0.12"];
+edge [color="#3c4466", penwidth=1.5, arrowsize=0.7];
+n0 [label="1. Erheben\ncollectors.json\nloadavg → load_one"];
+n1 [label="2. Umbenennen und filtern\nrouter.json\ncpu_load + cluster + hostname"];
+n2 [label="3. Übertragen\nsinks.json\nHTTPS + JWT"];
+n3 [label="4. Annehmen und speichern\ncc-backend /api/write/\nMetric-Store"];
+n4 [label="5. Node-Ansicht\ncpu_load"];
+n0 -> n1 -> n2 -> n3 -> n4;
+config [label="Zuordnung und Darstellung\ncluster.json\nname · scope · unit · timestep", fillcolor="#f8eef4", color="#954f71"];
+{rank=same; config; n3;}
+config -> n3 [style=dashed, color="#954f71"];
+}

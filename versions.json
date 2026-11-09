@@ -1,0 +1,65 @@
+{
+  "backend": {
+    "default": "1.5.4",
+    "repository": "https://github.com/ClusterCockpit/cc-backend",
+    "releases": {
+      "1.5.3": {
+        "tag": "v1.5.3",
+        "commit": "300108664774c5561b6838382876e247d0b043b9",
+        "asset": "cc-backend_Linux_x86_64.tar.gz",
+        "sha256": "e3e1257e1f3b8063e8b9a90a155e184e12251d318a0451b09bbb07c87c0facfb",
+        "cc_lib": "2.9.1"
+      },
+      "1.5.4": {
+        "tag": "v1.5.4",
+        "commit": "c94f5918f3126bacabd91e9ae6e194f3de6ea83c",
+        "asset": "cc-backend_Linux_x86_64.tar.gz",
+        "sha256": "ecfba842a1882ccb4285e8f274029ef4afcc7442417e00aafe0a204fc734f698",
+        "cc_lib": "2.12.0"
+      }
+    }
+  },
+  "collector": {
+    "repository": "https://github.com/ClusterCockpit/cc-metric-collector",
+    "tag": "v0.8.4",
+    "commit": "6df8da8fe9e3fe9459aa0538b3d4027ad4f906b0",
+    "cc_lib": "2.12.0",
+    "go": "1.25.0",
+    "alma9_rpm_sha256": "84c57c91e2fee924a4dc1eff1352a886c2cbb660b7588832dce53aad724c1b9b"
+  },
+  "adapter": {
+    "repository": "https://github.com/ClusterCockpit/cc-slurm-adapter",
+    "commit": "a8131f9ffe635303b7457f019999ad64add99dd6",
+    "kind": "pinned development snapshot",
+    "cc_lib": "2.12.0",
+    "go": "1.25.0"
+  },
+  "sync": {
+    "repository": "https://github.com/pc2/cc-slurm-sync",
+    "commit": "4e700768d4ff63b9ce8e7cbd02d227e6a350c367",
+    "upstream_branch": "slurm-23-11",
+    "kind": "upstream compatibility reference only",
+    "supported": false,
+    "incompatible_with_backend": "1.5.4",
+    "reason": "Start-job requests contain exclusive, rejected by backend 1.5.4"
+  },
+  "migration": {
+    "from": "1.4.4",
+    "from_commit": "f65e122f8d0d8b24afe5228587c3affef0d388d8",
+    "to": "1.5.3",
+    "db_versions": [
+      8,
+      11
+    ],
+    "archive_versions": [
+      2,
+      3
+    ]
+  },
+  "likwid": {
+    "repository": "https://github.com/RRZE-HPC/likwid",
+    "tag": "v5.5.1",
+    "commit": "a7dee7f35ccd68ce0717503a942238e740a01a1d",
+    "source_sha256": "b9fcb7411f082538f98bb368c20a35bad9d115792c28813fd55d533737936a5d"
+  }
+}

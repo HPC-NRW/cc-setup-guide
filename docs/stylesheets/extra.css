@@ -29,6 +29,8 @@
   --md-accent-fg-color:         #DA8AB3;
   --md-accent-fg-color--transparent: rgba(218, 138, 179, 0.20);
   --md-typeset-a-color:         #ADB8E6;
+  /* Built-ins/constants need more contrast on Material's slate code background. */
+  --md-code-hl-constant-color:  #A897EB;
 }
 
 /* ================================
@@ -43,4 +45,113 @@
 .md-typeset h1, .md-typeset h2, .md-typeset h3,
 .md-typeset h4, .md-typeset h5, .md-typeset h6 {
   font-weight: 700; /* Arial Bold */
+}
+
+/* Links remain identifiable without colour perception. */
+.md-typeset a:not(.md-button):not(.headerlink) {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 0.08em;
+}
+
+/* Material dims inactive tabs and footer text below AA contrast in this palette. */
+.md-tabs__link {
+  opacity: 1;
+}
+
+.md-tabs__item--active > .md-tabs__link {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.md-copyright,
+.md-copyright a {
+  color: #d6d6d6;
+}
+
+.md-copyright a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.md-nav button.md-nav__link,
+.md-nav button.md-nav__title {
+  text-align: start;
+  width: 100%;
+}
+
+.md-nav--primary button.md-nav__title {
+  color: var(--md-default-fg-color);
+}
+
+.md-search-result__meta {
+  color: var(--md-default-fg-color);
+}
+
+.guide-drawer-close {
+  display: none;
+}
+
+@media screen and (max-width: 76.234375em) {
+  .guide-drawer-close {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    z-index: 3;
+    display: block;
+    width: 2rem;
+    height: 2rem;
+    color: #fff;
+    background: var(--md-primary-fg-color);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+}
+
+/* A persistent two-colour indicator works on content and coloured headers. */
+:focus-visible,
+.md-typeset :focus-visible,
+.md-nav__link:focus-visible,
+.md-header__button:focus-visible,
+.md-option:focus-visible + .md-header__button {
+  outline: 3px solid var(--md-typeset-a-color);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--md-default-bg-color);
+}
+
+.md-header :focus-visible,
+.md-header .md-option:focus-visible + .md-header__button {
+  outline-color: #fff;
+  box-shadow: 0 0 0 3px var(--md-primary-fg-color);
+}
+
+.md-typeset a,
+.md-typeset :not(pre) > code {
+  overflow-wrap: anywhere;
+}
+
+/* Keep two-dimensional code and tables scrollable without widening the page. */
+.md-typeset [data-guide-scroll] {
+  scroll-margin-block: 5rem;
+}
+
+/* Respect system settings rather than animating navigation or scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid Highlight;
+    box-shadow: none;
+  }
 }

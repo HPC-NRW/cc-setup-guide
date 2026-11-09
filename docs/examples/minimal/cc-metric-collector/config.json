@@ -1,0 +1,10 @@
+{
+  "main": {
+    "interval": "60s",
+    "duration": "10s"
+  },
+  "collectors-file": "./collectors.json",
+  "router-file": "./router.json",
+  "sinks-file": "./sinks.json",
+  "receivers-file": "./receivers.json"
+}

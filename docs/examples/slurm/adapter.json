@@ -1,0 +1,14 @@
+{
+  "pidFilePath": "/run/cc-slurm-adapter/daemon.pid",
+  "prepSockListenPath": "/run/cc-slurm-adapter/daemon.sock",
+  "prepSockConnectPath": "/run/cc-slurm-adapter/daemon.sock",
+  "lastRunPath": "/var/lib/cc-slurm-adapter/last_run",
+  "slurmPollInterval": 60,
+  "slurmQueryDelay": 1,
+  "slurmQueryMaxSpan": 604800,
+  "slurmMaxRetries": 5,
+  "ccRestUrl": "https://cc.example.org",
+  "ccRestJwt": "REPLACE_FROM_PROTECTED_RAW_TOKEN_FILE",
+  "gpuPciAddrs": {},
+  "ignoreHosts": "^excluded-node$"
+}

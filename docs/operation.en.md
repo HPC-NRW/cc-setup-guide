@@ -1,147 +1,55 @@
-### Switch `cc-backend` to production
+# Switch `cc-backend` to production
 
-#### Using nginx
+A production backend needs a reachable HTTPS endpoint, suitable access rules, and a plan for maintenance and backups. The [RUB backend example](examples/rub/cc-backend/config.json) provides a complete configuration. API source addresses, memory budget, and paths need to match the site.
 
-Adjust `config.json`:
+`config.json` and the matching [UI configuration](examples/rub/cc-backend/ui-config.json) belong in the backend working directory; `ui-file` points to `ui-config.json`. In the RUB example, paths below `/opt/monitoring/cc-metric-store/var/` belong to the integrated store. They do not require a separate metric-store service.
 
-* Set `"addr"` to a port > 1024, e.g. `8443`.
-* Remove `"https-cert-file"` and `"https-key-file"`.
-* Remove `"redirect-http-to"`.
+The remaining tasks are:
 
-Create an `nginx` config (e.g., `/etc/nginx/sites-available/clustercockpit`):
+- HTTPS and API access before collectors and scheduler integration send data over the network.
+- Local [user accounts](user_accounts.md), or optional LDAP authentication.
+- An expiry and distribution policy for API tokens.
+- [Backup and recovery](backup_restore.md), including verification before [updates](updates.md).
 
-<details>
-<summary>Show nginx config</summary>
+## Using nginx
 
-```bash
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
+[Set up HTTPS and a reverse proxy](https_setup.md) covers nginx, certificates, API access, and additional HTTP methods. This step precedes collector installation.
 
-    server_name __FQDN__;
+## LDAP integration
 
-    location = /robots.txt {
-        default_type text/plain;
-        return 200 "User-agent: *\nDisallow: /\n";
+LDAP is optional. The RUB example starts with local accounts and JWTs. For central authentication, the following fragment extends the existing `auth` object while preserving its other settings. The URL, search base, bind DN, and filter need agreement with the identity team.
+
+`sync-user-on-login` imports users at login. Alternatively, `"sync-interval": "24h"` runs regular synchronisation.
+
+```json
+{
+  "auth": {
+    "ldap": {
+      "url": "ldaps://ldap.example.org:636",
+      "user-base": "ou=people,dc=example,dc=org",
+      "search-dn": "cn=monitoring,ou=services,dc=example,dc=org",
+      "user-bind": "uid={username},ou=people,dc=example,dc=org",
+      "user-filter": "(&(objectclass=posixAccount)(memberOf=cn=hpc,ou=groups,dc=example,dc=org))",
+      "sync-user-on-login": true
     }
-
-    server_tokens off;
-    autoindex off;
-
-    ssl_certificate     /etc/ssl/__PEM_FILE__;
-    ssl_certificate_key /etc/ssl/__KEY_FILE__;
-
-    ssl_protocols       TLSv1.2 TLSv1.3;
-    ssl_ciphers         HIGH:!aNULL:!MD5;
-
-    add_header Strict-Transport-Security "max-age=31536000" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header X-Frame-Options "DENY" always;
-
-    location / {
-        limit_except GET POST HEAD {
-            deny all;
-        }
-
-        proxy_pass         http://127.0.0.1:8443;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_read_timeout 90;
-    }
-}
-
-server {
-    listen 80;
-    listen [::]:80;
-    server_name __FQDN__;
-    return 301 https://$host$request_uri;
+  }
 }
 ```
 
-</details>
+The search account requires `LDAP_ADMIN_PASSWORD` in the existing backend `.env`. This entry is added as root in a protected editor with `umask 077`. Existing JWT and session keys remain unchanged. Passwords must stay out of shell arguments, documentation, and logs.
 
-Replace the placeholders for the FQDN and certificates and activate the site, e.g. `ln -s /etc/nginx/sites-available/clustercockpit /etc/nginx/sites-enabled/`.  
-With this configuration all HTTP traffic is redirected to HTTPS, and every request (IPv4+IPv6) is proxied to port 8443.  
-Update the `systemd` service as well so the web UI starts only after nginx is ready: add `Requires=nginx.service`.
+As in the installer, `.env` has permissions `0640` and belongs to root and the dedicated service group. Other accounts have no access; the installation directory has permissions `0750`. Membership of the service group is limited to authorised accounts. After the restart, a synthetic LDAP test account can verify login, group assignment, and job visibility against the intended identity provider.
 
-#### LDAP integration
+## API access and token rotation
 
-LDAP allows users to log in with their regular credentials and see their own jobs. Usually you will need a bind user provided by the identity management team.  
-Example entries inside `cc-backend/config.json`:
+Collectors and scheduler integration require a raw backend JWT. The installation writes it to `/opt/monitoring/cc-backend/apikey.txt`. The token and its copies remain readable only by the intended service accounts and travel over a protected channel.
 
-```json
-  "ldap": {
-    "url": "ldaps://hpcldap.rrze.uni-erlangen.de",
-    "user_base": "ou=people,ou=hpc,dc=rrze,dc=uni-erlangen,dc=de",
-    "search_dn": "cn=hpcmonitoring,ou=roadm,ou=profile,ou=hpc,dc=rrze,dc=uni-erlangen,dc=de",
-    "user_bind": "uid={username},ou=people,ou=hpc,dc=rrze,dc=uni-erlangen,dc=de",
-    "user_filter": "(&(objectclass=posixAccount))",
-    "sync_interval": "24h"
-  },
-```
+`auth.jwts.max-age` defines expiry. An empty value creates tokens without expiry; the installation template uses a limited lifetime. Expiring tokens need replacement before that deadline. An authenticated API request from each client confirms the new token works after distribution.
 
-This configuration synchronizes all entries every 24 hours. Depending on the size of your institution or IDM rate limits it may be better to create an LDAP group containing only HPC users and sync just that group:
+Later configuration changes do not alter tokens already issued. New tokens do not automatically revoke old ones. Changing the signing key affects every client and therefore needs a planned rotation.
 
-```json
-    "user_filter": "(&(objectclass=posixAccount)(memberOf=cn=hpc,ou=groups,dc=uni-erlangen,dc=de))",
-    "syncUserOnLogin": true
-```
+## Integrated-store persistence limits
 
-`"syncUserOnLogin"` adds users to the local database during their first login, so you can drop `sync_interval`.
+JSON checkpoints round samples to one decimal place, for example `0.034` to `0.0`. Historical samples submitted after startup with timestamps before that startup can initially appear through the API and be missing after a restart.
 
-#### Checkmk
-
-To monitor the `jwt` token lifetime with Checkmk, place an executable Python script inside `/usr/lib/check_mk_agent/local/`:
-
-```python
-#!/usr/bin/python3
-
-import jwt
-import time
-import sys
-import os
-
-JWT_FILE = "/opt/monitoring/cc-backend/admin.jwt"
-
-def critical(msg):
-    print(f"3 jwt_token - {msg}")
-    sys.exit(3)
-
-try:
-    if not os.path.exists(JWT_FILE):
-        critical("JWT file not found")
-
-    with open(JWT_FILE, 'r') as f:
-        token = f.read().strip()
-
-    try:
-        payload = jwt.decode(token, options={"verify_signature": False})
-    except jwt.DecodeError:
-        critical("JWT decode error")
-    except Exception as e:
-        critical(f"JWT decoding failed: {type(e).__name__}")
-
-    exp = payload.get("exp")
-    if not exp:
-        critical("exp field missing in JWT")
-
-    now = int(time.time())
-    seconds_left = exp - now
-    days_left = seconds_left // 86400
-
-    if seconds_left <= 0:
-        print(f"2 jwt_token - JWT Token expired!")
-        sys.exit(2)
-    elif days_left < 30:
-        print(f"1 jwt_token - JWT Token expires in {days_left} days")
-        sys.exit(1)
-    else:
-        print(f"0 jwt_token - JWT Token is valid ({days_left} days left)")
-        sys.exit(0)
-
-except Exception as e:
-    critical(f"Unexpected error: {type(e).__name__}")
-```
+Running jobs must finish and their archives pass verification before maintenance. Job archives and complete offline backups are both part of recovery. A controlled restart followed by a comparison of known time series shows which values survived. [Backup and recovery](backup_restore.md) describes the procedure; [Check the first job](first_job.md) covers the checks for an individual job.

@@ -1,0 +1,20 @@
+[Unit]
+Description=ClusterCockpit metric collector
+Documentation=https://github.com/ClusterCockpit/cc-metric-collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+UMask=0077
+WorkingDirectory=/cluster/monitoring/cc-metric-collector
+ExecStart=/cluster/monitoring/cc-metric-collector/cc-metric-collector -config ./config.json
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/opt/likwid/bin:/opt/likwid/sbin"
+Environment="LD_LIBRARY_PATH=/opt/likwid/lib"
+Restart=on-failure
+LimitNOFILE=10000
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

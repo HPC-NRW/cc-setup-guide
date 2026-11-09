@@ -12,7 +12,7 @@
   },
   "auth": {
     "jwts": {
-      "max-age": ""
+      "max-age": "8760h"
     }
   },
   "cron": {
@@ -24,6 +24,7 @@
     "kind": "file",
     "path": "./var/job-archive"
   },
+  "ui-file": "ui-config.json",
   "metric-store": {
     "checkpoints": {
       "file-format": "json",
@@ -35,6 +36,5 @@
       "mode": "archive",
       "directory": "./var/archive"
     }
-  },
-  "ui-file": "ui-config.json"
+  }
 }

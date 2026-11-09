@@ -1,40 +1,28 @@
+# Web interface
+
 ## First login
 
-After the services start you can reach the web frontend via:
+After `cc-backend` starts, the web interface is available during installation at `http://<monitoring-server>:8080`. Once HTTPS is configured, the configured server address applies.
 
-* **Default during installation:**  
-  http://<monitoring-server\>:8080
+Installation created the `admin` account. Its password is stored in `admin_password.txt` under `$INSTALL_DIR/cc-backend/`. The web interface has no password-change function; [Local accounts and passwords](user_accounts.md#change-a-password) describes the supported procedure.
 
-The credentials for the initial login were generated during the installation (username `admin`, password in `admin_password.txt` inside the installation directory).
+![Login form with username and password fields and a Submit button.](img/first_login.png)
 
-> **Note:**  
-> The password cannot be changed through the web UI afterwards.
-
-**Login screen:**  
-![Login screen](img/first_login.png)
-
----
+These screenshots show a local demo with synthetic data. Actual cluster and node names can differ from the examples.
 
 ## Overview: web interface after first login
 
-Once you log in successfully the navigation bar appears at the top.  
-The cluster (`demo_cluster`) shows up under “Status” as long as `cluster.json` exists and is valid.
+After login, the navigation bar appears at the top. The example cluster is available under `Info → Status → demo_cluster → Status Dashboard`, provided its `cluster.json` exists and is valid.
 
-**Cluster view ("Status" → "demo_cluster"):**  
-![Status view](img/status_cluster.png)
+![Status dashboard for demo_cluster showing one idle node, zero running jobs, and messages about metric data that has not arrived yet.](img/status_cluster.png)
 
----
+After a fresh installation, `demo_cluster` and the single `Idle Node` confirm that the backend has loaded the cluster definition and node topology. Collector measurements and job data have not arrived yet. Empty utilisation indicators, `Empty Metrics`, and `Cannot render roofline: No data!` are therefore expected at this stage and initially indicate only that the charts lack data.
+
+The `cluster.json` file must be in the correct location and contain valid JSON. The cluster name must match its `name` field in the job archive. The next step replaces the demo configuration with a [matching cluster and node definition](cluster_minimal.md).
 
 ## Typical issues and hints
 
-* **No navigation bar after the login**
+- **Missing navigation bar:** A missing or invalid `cluster.json` can prevent the interface from loading. The [FAQ](faq.md) covers configuration checks.
+- **Service unavailable:** The service status, journal, firewall, and routing provide the first checks. Port `8080` applies during installation, and port `443` after HTTPS setup.
 
-  Make sure `cluster.json` exists in the correct directory and is valid (syntax errors, invalid JSON). The UI cannot load properly if the file is missing/broken. The cluster name also needs to match `name` in the job archive `cluster.json`.
-
-* **Error “service unavailable”**
-
-  Check the service status (`systemctl status ...`), verify firewall rules, and ensure that ports 8080/443 are open.
-
----
-
-After this initial login and smoke test you can continue with the configuration, e.g. add subclusters, metrics, and set up the collectors.
+A successful login with a visible cluster completes this checkpoint. Data transmission follows the [cluster configuration](cluster_minimal.md) and [collector installation](cc_metric_collector_setup.md).

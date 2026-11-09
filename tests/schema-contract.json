@@ -1,0 +1,111 @@
+{
+  "backend_versions": [
+    "1.5.3",
+    "1.5.4"
+  ],
+  "cc_lib_versions": [
+    "2.9.1",
+    "2.12.0"
+  ],
+  "schema_directory": "tests/schemas/cc-lib-v2.9.1",
+  "schema_sha256": {
+    "cluster.schema.json": "04a3b84ba67d3decaebee8b6f3d94e600742c8185ccb7f737c64ec42554e3eab",
+    "unit.schema.json": "fff6dfbdd1fd4400de2e5429abde4a553611e3ef4955e77152ad0b569c74bb28"
+  },
+  "cluster_files": [
+    "scripts/templates/cluster.json.template",
+    "docs/examples/rub/job-archive/cluster.json"
+  ],
+  "rub_metric_units": {
+    "cpu_load": {
+      "base": ""
+    },
+    "cpu_load_core": {
+      "base": ""
+    },
+    "mem_used": {
+      "base": "B",
+      "prefix": "G"
+    },
+    "mem_bw": {
+      "base": "B/s",
+      "prefix": "G"
+    },
+    "net_bytes_in": {
+      "base": "B/s",
+      "prefix": "M"
+    },
+    "net_bytes_out": {
+      "base": "B/s",
+      "prefix": "M"
+    },
+    "disk_free": {
+      "base": "B",
+      "prefix": "G"
+    },
+    "lustre_read_bw": {
+      "base": "B/s",
+      "prefix": "M"
+    },
+    "lustre_write_bw": {
+      "base": "B/s",
+      "prefix": "M"
+    },
+    "nfsio_nread": {
+      "base": "B/s",
+      "prefix": "M"
+    },
+    "nfsio_nwrite": {
+      "base": "B/s",
+      "prefix": "M"
+    },
+    "ib_recv": {
+      "base": "B/s",
+      "prefix": "M"
+    },
+    "ib_xmit": {
+      "base": "B/s",
+      "prefix": "M"
+    },
+    "acc_mem_used": {
+      "base": "B",
+      "prefix": "G"
+    },
+    "acc_power": {
+      "base": "W"
+    },
+    "clock": {
+      "base": "Hz",
+      "prefix": "M"
+    },
+    "ipc": {
+      "base": "IPC"
+    },
+    "core_power": {
+      "base": "W"
+    },
+    "flops_any": {
+      "base": "F/s",
+      "prefix": "G"
+    },
+    "flops_bf16": {
+      "base": "F/s",
+      "prefix": "G"
+    },
+    "flops_sp": {
+      "base": "F/s",
+      "prefix": "G"
+    },
+    "flops_dp": {
+      "base": "F/s",
+      "prefix": "G"
+    },
+    "node_total_power": {
+      "base": "W"
+    },
+    "job_mem_used": {
+      "base": "B",
+      "prefix": "G"
+    }
+  }
+}

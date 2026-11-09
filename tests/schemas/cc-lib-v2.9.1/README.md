@@ -1,0 +1,1 @@
+Unmodified cc-lib v2.9.1 schemas from commit efd2cba698ce42b7c6ca793b74e6654202e3b98c, used by backend v1.5.3. Source: https://github.com/ClusterCockpit/cc-lib/tree/efd2cba698ce42b7c6ca793b74e6654202e3b98c/schema/schemas . License preserved.

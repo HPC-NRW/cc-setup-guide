@@ -1,45 +1,28 @@
+# Webinterface
+
 ## Erster Login
 
-Nach dem Start der Dienste ist das Webfrontend über folgende URL erreichbar:
+Nach dem Start von `cc-backend` ist die Weboberfläche während der Installation unter `http://<Monitoring-Server>:8080` erreichbar. Nach der HTTPS-Einrichtung gilt die konfigurierte Serveradresse.
 
-* **Standard (während der Installation):**
-  http://<Monitoring-Server\>:8080
+Die Installation hat den Benutzer `admin` angelegt. Sein Passwort steht in `admin_password.txt` unter `$INSTALL_DIR/cc-backend/`. Die Weboberfläche bietet keine Funktion zum Ändern des Passworts; das unterstützte Verfahren beschreibt [Lokale Konten und Passwortpflege](user_accounts.de.md#passwort-andern).
 
-Die Zugangsdaten für den ersten Login wurden während der Installation erzeugt (Benutzername: `admin`, Passwort siehe Datei `admin_password.txt` im Installationsverzeichnis).
+![Loginformular mit Feldern für Benutzername und Passwort sowie der Schaltfläche „Submit“.](img/first_login.png)
 
-> **Hinweis:**
-> Es gibt keine Funktion, das Passwort nach dem Login über die Weboberfläche zu ändern.
-
-
-**Login Screen:**
-   ![Login-Screen](img/first_login.png)
-
----
+Die Aufnahmen zeigen eine lokale Demo mit künstlichen Daten. Die Cluster- und Knotennamen der tatsächlichen Installation können davon abweichen.
 
 ## Übersicht: Webinterface nach Erst-Login
 
-Nach dem erfolgreichen Login sollte die Navigationsleiste oben angezeigt werden.
-Der Cluster (`demo_cluster`) wird im Menüpunkt "Status" sichtbar, solange die Datei `cluster.json` vorhanden und valide ist.
+Nach dem Login erscheint die Navigationsleiste oben. Unter `Info → Status → demo_cluster → Status Dashboard` steht der Beispielcluster zur Verfügung, sofern seine `cluster.json` vorhanden und gültig ist.
 
-**Cluster-Ansicht ("Status" &rarr; "demo_cluster"):**
-   ![Status View](img/status_cluster.png)
+![Status-Dashboard von demo_cluster mit einem unbelegten Knoten, null laufenden Jobs und Hinweisen auf noch fehlende Messdaten.](img/status_cluster.png)
 
+`demo_cluster` und der eine `Idle Node` bestätigen nach einer frischen Installation, dass das Backend die Clusterdefinition und Knotentopologie geladen hat. Zu diesem Zeitpunkt fehlen noch Collectormesswerte und Jobdaten. Leere Auslastungsanzeigen sowie `Empty Metrics` und `Cannot render roofline: No data!` sind deshalb erwartbar und weisen zunächst nur auf fehlende Diagrammdaten hin.
 
-
----
+Die Datei `cluster.json` muss am richtigen Ort liegen und gültiges JSON enthalten. Der Clustername muss mit ihrem Feld `name` im Job-Archive übereinstimmen. Der nächste Schritt ersetzt die Demokonfiguration durch eine [passende Cluster- und Knotenzuordnung](cluster_minimal.de.md).
 
 ## Typische Probleme und Hinweise
 
-* **Keine Navigationsleiste nach Login**
+- **Die Navigationsleiste fehlt:** Eine fehlende oder fehlerhafte `cluster.json` kann das Laden der Oberfläche verhindern. Die [FAQ](faq.de.md) beschreibt die Prüfung der Konfigurationsdateien.
+- **Der Dienst ist nicht erreichbar:** Dienststatus, Journal, Firewall und Routing prüfen. Während der Installation ist Port `8080` relevant, nach der HTTPS-Einrichtung Port `443`.
 
-  Prüfen, ob die Datei `cluster.json` im richtigen Verzeichnis liegt und valide ist (Syntax-Fehler, ungültiges JSON).
-  Bei fehlerhafter/fehlender `cluster.json` lädt die Weboberfläche nicht korrekt.
-  Der Clustername muss mit `name` in der `cluster.json` des Job-Archives übereinstimmen.
-
-* **Fehler "Service nicht erreichbar"**
-
-  Dienste-Status prüfen (`systemctl status ...`), Firewallregeln kontrollieren, Port 8080/443 freigeben.
-
----
-
-Nach erfolgreichem Login und Sichtprüfung ist das System bereit für die weitere Konfiguration, z. B. das Hinzufügen von Subclustern, Metriken und die Einrichtung der Collectoren.
+Ein erfolgreicher Login mit sichtbarem Cluster schließt diesen Kontrollpunkt ab. Die eigentliche Datenübertragung folgt nach [Clusterkonfiguration](cluster_minimal.de.md) und [Collectorinstallation](cc_metric_collector_setup.de.md).

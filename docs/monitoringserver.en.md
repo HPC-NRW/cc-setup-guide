@@ -1,333 +1,204 @@
-# Install server components (cc-backend 1.5.3)
+# Install server components
 
-This chapter shows how to install ClusterCockpit on the dedicated monitoring server.  
-All steps can either be automated via the provided script or executed manually.
+This chapter covers a **new installation on a dedicated Ubuntu/Debian monitoring server (Linux x86_64)**. Installation runs as `root`; the service later uses a separate account. Existing installations follow the separate [update and migration guidance](operation.md).
 
----
+The recommended route uses the installation script. The [manual path](#manual-path) performs the same work in individual steps and is an alternative. Both routes finish with [service installation and verification](#install-start-and-verify-the-service).
 
-## Create a dedicated system user
+## Prerequisites and service account
 
-A dedicated service user is recommended so that the web UI does not run as `root`. In that case you usually run a reverse proxy such as `nginx`, because the unprivileged user cannot bind to port 443. See the [`Operations & Troubleshooting`](operation.md) chapter for additional details.
-
-```bash
-useradd --system --no-create-home --user-group --shell "$(command -v nologin || echo /sbin/nologin)" clustercockpit
-mkdir -p /opt/monitoring
-chown -R clustercockpit:clustercockpit /opt/monitoring
-```
-
-## Install via script (recommended)
-
-For a consistent installation with minimal risk of mistakes we recommend using the bundled script.  
-You find the script and all templates inside `scripts/` and `scripts/templates/` in this repository.
-
-**Layout**
-
-```
-cc-setup-guide/
-├── scripts/
-│   ├── cc-installation.sh
-│   └── templates/
-│       ├── cc-backend.json.template
-│       ├── cluster.json.template
-│       └── clustercockpit.service.template
-```
-
-The script expects the template files to reside in `scripts/templates/`.
-
-> **Note about metric-store runtime parameters**  
-> The generated `cc-backend/config.json` defines `metric-store.retention-in-memory` as the time window in which metric data stays in RAM. Configure it to be at least as large as the maximum job runtime so that running jobs do not end up with gaps in their series.  
-> Checkpoints and cleanup are configured in the same `metric-store` section. Pick the exact values based on maximum job length and available resources.
-
----
-
-**Clone the repository**
+Installation requires Bash, Python ≥3.9 with its standard library, curl, OpenSSL, GNU coreutils, getent, and systemd tools for unit validation. On the new monitoring server, the following commands install the packages, create the service account, and download the guide:
 
 ```bash
-git clone https://github.com/hpc-nrw/cc-setup-guide.git
+apt-get update
+apt-get install python3 curl openssl ca-certificates git systemd
+useradd --system --no-create-home --user-group --shell /usr/sbin/nologin clustercockpit
+git clone https://github.com/HPC-NRW/cc-setup-guide.git
 cd cc-setup-guide
 ```
 
----
+If the service account already exists, the `useradd` command is unnecessary. The installation target must not exist yet; it must not be created or prepared with a recursive `chown` in advance. `/opt` or `/srv` must already exist, be owned by root, and deny write access to the group and other users. Every parent must also be a real directory rather than a symlink.
 
-**Example invocation**
+## Install via script
+
+The script requires the complete checkout, including `versions.json`, `scripts/templates/`, and `docs/examples/minimal/`. Its source is in [cc-installation.sh](https://github.com/hpc-nrw/cc-setup-guide/blob/main/scripts/cc-installation.sh) and [install_support.py](https://github.com/hpc-nrw/cc-setup-guide/blob/main/scripts/install_support.py).
+
+The following command installs into `/opt/monitoring` with the example cluster `demo_cluster`:
 
 ```bash
 bash scripts/cc-installation.sh -c demo_cluster
 ```
 
-Alternative installation directory:
-
-```bash
-bash scripts/cc-installation.sh -c demo_cluster -d /srv/monitoring
-```
-
-Install under an existing user:
+A different target directory and service account can be supplied explicitly. This target must not exist yet either:
 
 ```bash
 bash scripts/cc-installation.sh -c demo_cluster -d /srv/monitoring -u clustercockpit:clustercockpit
 ```
 
----
-
-**Note:**  
-Before executing the script, make sure it and all template files are present and executable. Adapt the template files (for example `cluster.json` or the service units) in `scripts/templates/` if you need site-specific defaults.
-
----
-
-**The script takes care of all required steps—from creating directories to initial configuration, database, and user creation.  
-Afterwards you will find all credentials and configuration files inside the installation directory.**
-
----
-
-## Overview of the performed steps
-
-Below you find all major installation steps in detail.  
-Feel free to run them manually if you prefer not to use the script.
-
----
-
-### 1. Create the directory hierarchy
-
-```bash
-export INSTALL_DIR="/opt/monitoring"
-export CLUSTER_NAME="demo_cluster"
-
-mkdir -p "$INSTALL_DIR/cc-backend"
-```
-
----
-
-### 2. Download and extract the components
-
-Always download the latest releases directly from GitHub:
-
-```bash
-# Download and extract cc-backend
-cd "$INSTALL_DIR"
-CC_BACKEND_URL=$(curl -s https://api.github.com/repos/ClusterCockpit/cc-backend/releases/latest | grep "browser_download_url.*Linux_x86_64.tar.gz" | cut -d '"' -f 4)
-wget -O cc-backend.tar.gz "$CC_BACKEND_URL"
-tar -xzf cc-backend.tar.gz -C cc-backend --strip-components=1
-rm cc-backend.tar.gz
-
-```
-
----
-
-### 3. Generate a JWT keypair
-
-```bash
-cd "$INSTALL_DIR/cc-backend"
-chmod +x ./gen-keypair
-./gen-keypair > keypair.txt
-
-export JWT_PUBLIC_KEY=$(grep "ED25519 PUBLIC_KEY" keypair.txt | cut -d '"' -f 2)
-export JWT_PRIVATE_KEY=$(grep "ED25519 PRIVATE_KEY" keypair.txt | cut -d '"' -f 2)
-rm keypair.txt
-```
-
----
-
-### 4. Create and customize the configuration files
-
-Use the supplied templates and replace the placeholders. For example, set the cluster name inside `config.json`:
-
-```bash
-cp templates/cc-backend.json.template ./config.json
-sed -i "s/__CLUSTER_NAME__/$CLUSTER_NAME/g" ./config.json
-```
-
-Do the same for `cluster.json`.
-
----
-
-### 5. Create `cluster.json` (minimal setup)
-
-Create  
-`$INSTALL_DIR/cc-backend/var/job-archive/$CLUSTERNAME/cluster.json`  
-inside the installation directory.  
-You can start from the provided `templates/cluster.json.template`:
-
 <details>
-<summary>Minimal example: cluster.json</summary>
+<summary>Accepted cluster names, paths, and account names</summary>
 
-```json
-{
-  "name": "demo_cluster",
-  "metricConfig": [
-    {
-      "name": "cpu_load",
-      "unit": {
-        "base": ""
-      },
-      "scope": "node",
-      "aggregation": "avg",
-      "footprint": "avg",
-      "timestep": 60,
-      "peak": 1,
-      "normal": 1,
-      "caution": 1,
-      "alert": 1
-    }
-  ],
-  "subClusters": [
-    {
-      "name": "first_subcluster",
-      "nodes": "node001",
-      "processorType": "Demo CPU Type",
-      "socketsPerNode": 1,
-      "coresPerSocket": 1,
-      "threadsPerCore": 1,
-      "flopRateScalar": {
-        "unit": {
-          "base": "F/s",
-          "prefix": "G"
-        },
-        "value": 1
-      },
-      "flopRateSimd": {
-        "unit": {
-          "base": "F/s",
-          "prefix": "G"
-        },
-        "value": 1
-      },
-      "memoryBandwidth": {
-        "unit": {
-          "base": "B/s",
-          "prefix": "G"
-        },
-        "value": 1
-      },
-      "topology": {
-        "node": [
-          0
-        ],
-        "socket": [
-          [0]
-        ],
-        "memoryDomain": [
-          [0]
-        ],
-        "core": [
-          [0]
-        ]
-      }
-    }
-  ]
-}
-```
+Cluster names must match `[A-Za-z0-9][A-Za-z0-9_-]{0,63}`. Paths must be absolute and contain at least two components. Letters, digits, `_`, `-`, and `.` are allowed within a component. The script rejects `.`/`..`, relative paths, symlinks, spaces, newlines, quotes, backslashes, `&`, `@`, and `%`.
+
+Account names must match `[a-z_][a-z0-9_-]{0,31}`. `-u name` uses the group with the same name; `-u name:group` specifies the account and group separately.
+
 </details>
 
----
+Before downloading anything, the script checks accounts, paths, the version manifest, templates, and UI configuration. It rejects an existing target without modifying it, including an empty directory or the remains of an interrupted attempt. There is no update or resume mode. An interrupted installation retains its private state for diagnosis; that state needs inspection before deletion or reuse.
 
-### 6. Configure environment variables for the backend service
+`umask 077` applies before the first write. Passwords and JWT are not printed to stdout, and the private diagnostics in `.install-tmp` must not be published either. A successful run prepares the installation. **The service has not been installed or started yet.** The next step is [service installation and verification](#install-start-and-verify-the-service).
 
+## Manual path
+
+The following steps replace the installation script. They require a **separate fresh target** and run in order in the same root Bash session, starting in the cloned guide. The Python helpers in [install_support.py](https://github.com/hpc-nrw/cc-setup-guide/blob/main/scripts/install_support.py) validate inputs and archives, create secure key files, and set permissions. They do not perform installation, downloads, or service starts in the background here.
+
+### 1. Check the environment and reserve a new target
+
+The following block selects the same release as the installation script. `GUIDE_DIR` retains the absolute path to the template source after later `cd` commands.
+
+<!-- installer-manual-1 -->
 ```bash
-cat > .env <<EOF
-SESSION_KEY="$(openssl rand -base64 32)"
-JWT_PRIVATE_KEY="$JWT_PRIVATE_KEY"
-JWT_PUBLIC_KEY="$JWT_PUBLIC_KEY"
-EOF
+set +x
+set -euo pipefail
+umask 077
+# Run in the cloned guide, in the same root Bash session for all steps.
+GUIDE_DIR=$(pwd -P)
+INSTALL_DIR=/opt/monitoring
+CLUSTER_NAME=demo_cluster
+CC_USER=clustercockpit
+CC_GROUP=clustercockpit
+HELPER="$GUIDE_DIR/scripts/install_support.py"
+for command in python3 curl openssl install mkdir rm cp sed stat uname systemd-analyze; do
+    command -v "$command" >/dev/null || { echo "Missing dependency: $command" >&2; exit 1; }
+done
+VERSION=$(python3 "$HELPER" default-version "$GUIDE_DIR")
+python3 "$HELPER" preflight "$GUIDE_DIR" "$INSTALL_DIR" "$CLUSTER_NAME" "$CC_USER" "$CC_GROUP" "$VERSION"
+test "$(uname -s):$(uname -m)" = Linux:x86_64
+mkdir -m 0700 -- "$INSTALL_DIR"
+install -d -m 0700 "$INSTALL_DIR/cc-backend" "$INSTALL_DIR/.install-tmp"
+TEMP_DIR="$INSTALL_DIR/.install-tmp"
 ```
 
----
+### 2. Download and extract the pinned release with validation
 
-### 7. Initialize the backend and database
+The helper validates the download and extracts the release without overwriting existing files.
 
+<details>
+<summary>Release validation details</summary>
+
+Validation requires valid release JSON with exactly one matching asset, the expected SHA256 checksum, and exactly six flat regular files. Links, path traversal, and unexpected archive layouts are rejected. Extraction does not use `--strip-components=1`.
+
+</details>
+
+<!-- installer-manual-2 -->
 ```bash
-chmod +x ./cc-backend
-./cc-backend -init
-echo 3 > ./var/job-archive/version.txt
-./cc-backend -migrate-db
+curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+    --connect-timeout 15 --max-time 120 --retry 2 \
+    "https://api.github.com/repos/ClusterCockpit/cc-backend/releases/tags/v$VERSION" > "$TEMP_DIR/release.json"
+URL=$(python3 "$HELPER" release-url "$GUIDE_DIR" "$VERSION" "$TEMP_DIR/release.json")
+curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+    --connect-timeout 15 --max-time 300 --retry 2 "$URL" > "$TEMP_DIR/backend.tar.gz"
+python3 "$HELPER" extract "$GUIDE_DIR" "$VERSION" "$TEMP_DIR/backend.tar.gz" "$INSTALL_DIR/cc-backend"
+cd "$INSTALL_DIR/cc-backend"
+test -x ./cc-backend && test -x ./gen-keypair
 ```
 
----
+### 3. Generate new keys and session secret
 
-### 8. Create the users
+`gen-keypair` generates new Ed25519 keys. The helper checks their number and lengths and adds a random session secret. Key contents are not printed.
 
-Generate random passwords:
-
+<!-- installer-manual-3 -->
 ```bash
-ADMIN_USER="admin"
-ADMIN_PASS=$(openssl rand -base64 18)
-API_USER="apiuser"
-API_PASS=$(openssl rand -base64 18)
-
-./cc-backend -add-user "$ADMIN_USER:admin:$ADMIN_PASS"
-./cc-backend -add-user "$API_USER:api:$API_PASS"
+./gen-keypair > "$TEMP_DIR/keypair.txt"
+python3 "$HELPER" environment "$TEMP_DIR/keypair.txt" .env
+rm -- "$TEMP_DIR/keypair.txt"
 ```
 
-Store the passwords for later use:
+### 4. Create backend, UI, cluster and service configuration
 
+The minimal template already contains `cpu_load` and example host `node001` in subcluster `first_subcluster`. Host names, topology, and thresholds must match the actual hardware before site data is collected; [first cluster setup](cluster_minimal.md) describes those changes.
+
+The supplied [ui-config.json](examples/minimal/cc-backend/ui-config.json) belongs in the backend working directory alongside `config.json`. It contains the web interface defaults; `ui-file` in `config.json` points to it. Later display customizations belong in that file.
+
+<!-- installer-manual-4 -->
 ```bash
-echo "$ADMIN_PASS" > admin_password.txt
-echo "$API_PASS" > apiuser_password.txt
+cp "$GUIDE_DIR/scripts/templates/cc-backend.json.template" config.json
+cp "$GUIDE_DIR/docs/examples/minimal/cc-backend/ui-config.json" ui-config.json
+mkdir -p "var/job-archive/$CLUSTER_NAME"
+python3 - "$GUIDE_DIR" "$CLUSTER_NAME" <<'CONFIG'
+import json, pathlib, sys
+source = pathlib.Path(sys.argv[1]) / 'scripts/templates/cluster.json.template'
+cluster = json.loads(source.read_text())
+cluster['name'] = sys.argv[2]
+with (pathlib.Path('var/job-archive') / sys.argv[2] / 'cluster.json').open('x') as output:
+    json.dump(cluster, output, indent=2)
+    output.write('\n')
+CONFIG
+# Only this newly created, empty archive: never change an existing format marker.
+printf '3\n' > var/job-archive/version.txt
+sed -e "s@__INSTALL_DIR__@$INSTALL_DIR@g" \
+    -e "s@__CC_USER__@$CC_USER@g" -e "s@__CC_GROUP__@$CC_GROUP@g" \
+    "$GUIDE_DIR/scripts/templates/clustercockpit.service.template" > "$INSTALL_DIR/clustercockpit.service"
 ```
 
----
+### 5. Create an empty database and users
 
-### 9. Generate and save the API token
+`-migrate-db` creates the empty database. **`-init` is unsuitable here:** it would replace custom configuration and secrets with upstream examples, or do nothing if `var` already exists. The archive marker `3` set earlier applies only to the new empty archive and does not replace a migration.
 
+The CLI prints the JWT alongside other text. The helper extracts exactly one structurally valid EdDSA token into `apikey.txt`.
+
+<!-- installer-manual-5 -->
 ```bash
-./cc-backend -jwt "$API_USER" | tee apikey.txt
+./cc-backend -migrate-db > "$TEMP_DIR/database.log" 2>&1
+ADMIN_PASS=$(openssl rand -base64 24)
+API_PASS=$(openssl rand -base64 24)
+./cc-backend -add-user "admin:admin:$ADMIN_PASS" > "$TEMP_DIR/admin.log" 2>&1
+./cc-backend -add-user "apiuser:api:$API_PASS" > "$TEMP_DIR/apiuser.log" 2>&1
+printf '%s\n' "$ADMIN_PASS" > admin_password.txt
+printf '%s\n' "$API_PASS" > apiuser_password.txt
+unset ADMIN_PASS API_PASS
+./cc-backend -jwt apiuser > "$TEMP_DIR/jwt.txt" 2> "$TEMP_DIR/jwt.log"
+python3 "$HELPER" token "$TEMP_DIR/jwt.txt" apikey.txt
+rm -- "$TEMP_DIR/jwt.txt"
 ```
 
-> **Note:** In the generated `config.json` the `jwts.max-age` entry is empty by default, which means API tokens never expire. Set a duration there (for example `8760h` for one year) if you want to enforce an expiry. Afterwards you must generate a new token.  
-> It also makes sense to restrict `api-allowed-ips` to trusted sources. The default configuration accepts every address (`"*"`). Only individual IP addresses are supported; CIDR notation for subnets is not supported.
+**Upstream CLI limit:** `-add-user` accepts the password as a command-line argument and has no stdin or password-file option. On systems exposing process arguments, other local users may see the password during this short call. Account creation therefore belongs on the fresh dedicated monitoring server before untrusted local access is enabled. Protected files and suppressed log output do not remove this limitation.
 
----
+### 6. Finalize ownership/permissions and verify the unit
 
-### 10. Create the service units
+The helper validates the created database users and changes permissions only inside the new target: root owns binaries and configuration, while the service account owns runtime state beneath `var`. The API file is readable only by root. Any required copies belong in protected client configurations; a broad `chown -R` on an unrelated installation prefix is unsuitable.
 
-Generate the systemd unit files based on the templates:
-
+<!-- installer-manual-6 -->
 ```bash
-cp templates/clustercockpit.service.template "$INSTALL_DIR/clustercockpit.service"
-sed -i "s@__INSTALL_DIR__@$INSTALL_DIR@g" "$INSTALL_DIR/clustercockpit.service"
+# Validate the database/users and set explicit final owners and permissions.
+python3 "$HELPER" finish "$INSTALL_DIR" "$CC_USER" "$CC_GROUP"
+# Expected: root:service-group 0750 for installation/backend directories;
+# root:service-group 0640 for .env/config, root-only 0600 for password/JWT files;
+# service-user:service-group 0700 directories / 0600 files beneath var.
+stat -c '%U:%G %a %n' . .env config.json ui-config.json apikey.txt var var/job.db
+systemd-analyze verify "$INSTALL_DIR/clustercockpit.service"
 ```
 
-Copy the units to `/etc/systemd/system/` and enable them.
+## Install, start and verify the service
 
-## Start the services
+This final step applies to both installation routes. `INSTALL_DIR` must match the selected target: `/opt/monitoring` for the default command, or `/srv/monitoring` for the example with `-d`. The assignment below runs in the current shell; the installation script does not set a variable in its parent shell.
 
-Either start the services manually or via systemd.
-
-**systemd start-up**
+The configuration, cluster host names, and network access need checking before startup. The following commands run as root:
 
 ```bash
+INSTALL_DIR=/opt/monitoring
+install -o root -g root -m 0644 "$INSTALL_DIR/clustercockpit.service" /etc/systemd/system/clustercockpit.service
 systemctl daemon-reload
-systemctl enable clustercockpit.service
-
-systemctl start clustercockpit.service
-```
-
-**Check their status**
-
-```bash
+systemctl enable --now clustercockpit.service
 systemctl status clustercockpit.service
+journalctl -u clustercockpit.service -n 50 --no-pager
 ```
 
----
+The service should report an active state, with no configuration-loading or database-opening errors in the journal. The web interface initially listens on port `8080`. The next checks are the [first login](webinterface.md) and [cluster and node configuration](cluster_minimal.md).
 
-## Status after the installation
+Before the first collector connection over HTTPS, the [reverse proxy and TLS](https_setup.md) and allowed API source addresses must be configured. The collector steps use this HTTPS endpoint.
 
-After completing the steps above the server components are ready:
+Password files and the **raw JWT** are stored in `$INSTALL_DIR/cc-backend/`: `admin_password.txt`, `apiuser_password.txt`, and `apikey.txt`, each with mode `0600`. `.env` holds the private signing and session values with mode `0640`, owned by root and the service group. These files must not be published.
 
-- **Service active:** `cc-backend` (web/API and integrated metric store) runs and can be controlled via systemd.
-- **Credentials:** Admin password, API password, and API token were created.  
-    - `$INSTALL_DIR/cc-backend/admin_password.txt`  
-    - `$INSTALL_DIR/cc-backend/apiuser_password.txt`  
-    - `$INSTALL_DIR/cc-backend/apikey.txt`
-- **Configuration & secrets:**  
-    - Backend: `$INSTALL_DIR/cc-backend/config.json` and `$INSTALL_DIR/cc-backend/.env`  
-    - Integrated metric store: `metric-store` section in `$INSTALL_DIR/cc-backend/config.json`
-- **Cluster configuration:**  
-    - File: `$INSTALL_DIR/cc-backend/var/job-archive/$CLUSTER_NAME/cluster.json` (subclusters, metrics, thresholds, …).
-- **Data & directory layout:**  
-    - Archive/metadata directory: `$INSTALL_DIR/cc-backend/var/job-archive/$CLUSTER_NAME/`  
-    - Archive format version: `$INSTALL_DIR/cc-backend/var/job-archive/version.txt`
+The template sets `auth.jwts.max-age` to `8760h` (365 days). Replacement tokens must reach all clients before expiry. An empty value would create tokens without expiry; later configuration changes do not alter tokens already issued. `main.api-allowed-ips` accepts individual IP addresses, not CIDR networks. The default `*` needs deliberate restriction for the site.
 
-At this point `cluster.json` only contains the **cluster name** and an **example subcluster list**. The detailed configuration (subclusters, metrics, thresholds) is handled in the following chapters:
-
-- [Web interface](webinterface.md)
-- [Metrics & collectors](metrics.md)
+`metric-store.retention-in-memory` sets retention in memory. The memory cap, active jobs, restarts, and JSON-checkpoint rounding also affect retention. Limits and backups are covered in [Operations](operation.md). The [first metric](metrics.md) and [metric reception and display](metric_receive_display.md) follow the collector setup.

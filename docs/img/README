@@ -1,1 +1,35 @@
 dot -Tsvg  architecture.dot -o architecture.svg
+
+first_login.png and status_cluster.png show the backend in a local,
+isolated demo installation.
+first_metric.png and archived_job.png show synthetic cpu_load samples for
+demo_cluster, node001 and demo job 1001. No production data or credentials
+were used. The corresponding DE/EN chapters provide text alternatives.
+
+node_overview.png, first_metric_overview.png and running_job.png were captured
+from official backend 1.5.4 with synthetic node states, measurements and jobs.
+They show demo_cluster, node001/first_subcluster and node002/second_subcluster;
+job 1002 is running. No Slurm cluster or production installation is involved.
+The full node view supplies the navigation and identity context missing from
+the smaller first_metric.png detail. The guide explains the relevant controls
+and distinguishes this demonstration from a real scheduler integration test.
+
+Reproduction from the repository root, with requirements-test.txt installed:
+
+python3 tests/capture_docs_ui.py --source . \
+  --backend-dir /path/to/unpacked/backend-1.5.4 \
+  --work /path/to/new/private/capture-directory \
+  --browser-executable /path/to/chromium
+
+The backend directory must contain the official cc-backend and gen-keypair
+binaries. The capture tool refuses an existing work directory, binds loopback,
+blocks external browser requests and stops its backend at the end. It leaves
+generated credentials and logs in the private work directory. Only files from
+its screenshots/ subdirectory belong in this image directory; evidence.json
+records the synthetic identities and verified job states.
+
+metric_flow.de.svg and metric_flow.en.svg explain the path of a single metric.
+Their editable Graphviz sources are metric_flow.de.dot and metric_flow.en.dot:
+
+dot -Tsvg docs/img/metric_flow.de.dot -o docs/img/metric_flow.de.svg
+dot -Tsvg docs/img/metric_flow.en.dot -o docs/img/metric_flow.en.svg

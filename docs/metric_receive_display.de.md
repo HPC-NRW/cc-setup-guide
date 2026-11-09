@@ -1,56 +1,17 @@
 # Metriken empfangen und anzeigen
 
-Der im Abschnitt [cc-metric-collector einrichten](cc_metric_collector_setup.de.md) konfigurierte Collector sendet zwar bereits Werte, allerdings akzeptiert `cc-backend` sie nur, wenn die Metriken explizit hinterlegt sind.
-In diesem Abschnitt wird beschrieben, wie neue oder geänderte Metriken auf dem Monitoring-Server hinterlegt werden, damit
+Eine neue Metrik braucht neben der Collector-Konfiguration einen Eintrag in `metricConfig` in der `cluster.json`. Erst dann kann `cc-backend` die Werte annehmen und anzeigen. Der [Weg eines Messwerts](metric_flow.de.md) zeigt, wie Collector, Router, Write-API und Backend zusammenarbeiten.
 
-1. der in `cc-backend` konfigurierte Metric-Store die Daten entgegennimmt und
-2. das Webinterface (`cc-backend`) die Metriken über Einträge in der `cluster.json` erkennt.
+Für den ersten Empfang genügt die vorhandene Store-Konfiguration aus der Installation. Der direkte Weg führt über den Metrikeintrag und den Neustart zur Prüfung in der Node-Ansicht. Anzeigeoptionen und Store-Aufbewahrung folgen weiter unten.
 
-> **Kurzfassung:** Jede neue Metrik benötigt einen Eintrag in der `metricConfig` der `cluster.json`. Die Metric-Store-Laufzeitparameter stehen in `cc-backend/config.json` unter `metric-store`.
+<a id="2-cc-backend-clusterjson-aktualisieren"></a>
 
----
-
-## 1. Metric-Store im `cc-backend` prüfen
-
-Dateipfad (Standardinstallation gemäß Guide):  
-`$INSTALL_DIR/cc-backend/config.json`
-
-Der Metric-Store wird über den Abschnitt `metric-store` in `cc-backend/config.json` konfiguriert:
-
-```json
-"metric-store": {
-  "checkpoints": {
-    "file-format": "json",
-    "directory": "./var/checkpoints"
-  },
-  "memory-cap": 100,
-  "retention-in-memory": "48h",
-  "cleanup": {
-    "mode": "archive",
-    "directory": "./var/archive"
-  }
-}
-```
-
-**Felder:**
-- `retention-in-memory`: Zeitraum, in dem Messdaten im RAM gehalten werden.
-- `checkpoints`: Ablage und Format der Sicherungspunkte.
-- `cleanup`: Verhalten für alte Daten. Für 1.5.3 ist `archive` bzw. die stabile Retention-Policy der Installation zu prüfen; bei Problemen empfiehlt upstream weiterhin eine konservative Delete-Policy.
-
-Nach Änderungen muss `cc-backend` neu gestartet werden:
-
-```bash
-systemctl restart clustercockpit.service
-```
-
----
-
-## 2. cc-backend: `cluster.json` aktualisieren
+## 1. Metrik in cluster.json eintragen
 
 Dateipfad:  
 `$INSTALL_DIR/cc-backend/var/job-archive/$CLUSTER_NAME/cluster.json`
 
-`cluster.json` beschreibt sowohl die Subcluster als auch alle Metriken, die im Webinterface angezeigt werden sollen. Jede Metrik steht als Objekt innerhalb des Arrays `metricConfig`.
+`cluster.json` beschreibt die Subcluster und die verfügbaren Metriken. Jede Metrik erhält ein eigenes Objekt im Array `metricConfig`.
 
 ### Minimaler Eintrag
 
@@ -69,63 +30,80 @@ Dateipfad:
 ```
 
 **Wichtige Felder:**
-- `name`: Muss exakt mit dem Namen übereinstimmen, der nach dem Routing (z. B. `rename_messages`) publiziert wird.
-- `unit`: Basiseinheit (optional `prefix`: `"M"`, `"G"`, ...), konsistent zu den in `router.json` gesetzten Einheiten.
-- `scope`: Granularität (`node`, `socket`, `hwthread`, `memoryDomain`, `accelerator`).
-- `aggregation`: Üblicherweise `avg` für Zustände oder `sum` für kumulative Metriken.
-- `timestep`: Anzeigeintervall (in Sekunden), sollte zum `interval` des `cc-metric-collector` passen.
-- `peak`, `normal`, `caution`, `alert`: Schwellenwerte für das UI. Graphen zwischen `normal` und `caution` bleiben neutral. Werte zwischen `caution` und `alert` werden gelb markiert (= genauer hinschauen), Werte unter `alert` rot (= sofort reagieren).
+- `name`: Der Name muss exakt zum veröffentlichten Namen nach dem Routing passen, etwa nach `rename_messages`.
+- `unit`: Basiseinheit und optional ein Präfix wie `"M"` oder `"G"`. Beide müssen zu den bereits skalierten Werten aus `router.json` passen.
+- `scope`: Hardwareebene der Messung: `node`, `socket`, `hwthread`, `memoryDomain` oder `accelerator`.
+- `aggregation`: Üblicherweise `avg` für Zustandswerte und `sum` für Werte, die sich über Hardwareeinheiten addieren lassen.
+- `timestep`: Anzeigeintervall in Sekunden, passend zu `main.interval` des Collectors.
+- `peak`, `normal`, `caution`, `alert`: Referenz- und Schwellenwerte der Anzeige. Zwischen `normal` und `caution` bleibt der Graph neutral, zwischen `caution` und `alert` wird er gelb, unterhalb von `alert` rot. Entscheidend für die Bewertung sind der konkrete Messwert und die dazu konfigurierten Grenzen.
 
-### Konfigurationsmöglichkeiten
+<a id="anderungen-aktivieren"></a>
 
-#### Alert-Logik umkehren
-Durch Setzen von `"lowerIsBetter": true` wird der Alarm nicht bei zu kleinen, sondern bei zu hohen Werten ausgelöst. Das ist z. B. für `cpu_load_core`, Netzwerkbandbreiten oder IOPS sinnvoll.
+## 2. Änderungen aktivieren und Empfang prüfen
 
-#### Metrik nur für bestimmte Subcluster
-Um z. B. GPU-Metriken nur für Subcluster anzuzeigen, die auch GPUs verbaut haben, können Metriken aus einzelnen Subclustern entfernt werden:
-
-```json
-            "name": "nv_compute_processes",
-            "unit": {
-                "base": "processes"
-            },
-            "scope": "accelerator",
-            "aggregation": "sum",
-            "timestep": 60,
-            "peak": 100, 
-            "normal": 50,
-            "caution": 80,
-            "alert": 90,
-            "subClusters": [
-                {
-                    "name": "cpu",
-                    "remove": true 
-                },   
-                {    
-                    "name": "cpu_abs2",
-                    "remove": true 
-                },   
-                {    
-                    "name": "fatcpu",
-                    "remove": true 
-                }
-            ]
-        },
+Ein Neustart von `cc-backend` auf dem Monitoring-Server aktiviert die geänderte Metrikkonfiguration:
+```bash
+systemctl restart clustercockpit.service
 ```
 
-**Anmerkung:** Gelöschte Metriken sind in der Jobview nicht mehr sichtbar und können bei der Metrikauswahl auch nicht ausgewählt werden. In der Node-View für Administratoren tauchen blaue Felder auf, die darauf hinweisen, dass die Metrik für diesen Subcluster deaktiviert ist:
 
-![Deaktivierte Metrik Hinweis](img/removed_metric.png)
+<a id="3-prufen-ob-metriken-ankommen"></a>
+
+Nach mehreren Messintervallen sollten die Node-Graphen der aktiven Collectoren Werte zeigen. Der Vergleich umfasst den Metriknamen, Cluster, Hostname, Scope und das Messintervall. Die stdout-Ausgabe muss zur Zeitreihe und zu den angezeigten Zahlen passen.
+Der Hinweis `Missing Metric` mit dem Text `No dataset returned for …` bedeutet, dass für die genannte Metrik kein Datensatz zurückgegeben wurde. Die Abbildung zeigt dies für `job_mem_used`:
+
+![Warnung „Missing Metric“: Für job_mem_used wurde kein Datensatz zurückgegeben.](img/missing_metric.png)
+
+Bei fehlenden Werten führt der Prüfweg vom veröffentlichten Namen in der Collector-Ausgabe zum Eingang an `/api/write/` und zum Eintrag in `metricConfig`. Die [Fehlerdiagnose](faq.de.md) beschreibt die nächsten Prüfungen.
+
+### Einen abgeschlossenen Job prüfen
+
+Eine gefüllte Node-Zeitreihe bestätigt den Empfang von Messwerten. Die Zuordnung zu Jobs und deren Archivierung prüft anschließend [Ein erster vollständiger Job](first_job.de.md), sobald die Slurm-Anbindung eingerichtet ist. Dort stehen Testablauf, erwarteter Monitoringstatus, Neustartprüfung und die archivierte Demo-Jobansicht.
+
+<a id="konfigurationsmoglichkeiten"></a>
+
+## Optionale Anzeigeeinstellungen
+
+### Alert-Logik umkehren
+`"lowerIsBetter": true` kehrt die Bewertung um: Hohe Werte lösen dann den Hinweis aus. Das kommt etwa für `cpu_load_core`, Netzwerkbandbreiten infrage.
+
+### Metrik nur für bestimmte Subcluster
+Einzelne Subcluster können Metriken aus der gemeinsamen Konfiguration entfernen. So bleiben GPU-Metriken auf Subcluster mit GPUs beschränkt:
+
+```json
+{
+  "name": "acc_mem_used",
+  "unit": { "base": "B", "prefix": "G" },
+  "lowerIsBetter": true,
+  "scope": "accelerator",
+  "aggregation": "sum",
+  "timestep": 60,
+  "peak": 100,
+  "normal": 50,
+  "caution": 80,
+  "alert": 90,
+  "subClusters": [
+    { "name": "cpu", "remove": true },
+    { "name": "cpu_abs2", "remove": true },
+    { "name": "fatcpu", "remove": true },
+    { "name": "tcpu", "remove": true }
+  ]
+}
+```
+
+Eine entfernte Metrik erscheint im betroffenen Subcluster weder in der Jobansicht noch in der Metrikauswahl. In der Node-Ansicht für Administratoren steht stattdessen `Metric disabled for subcluster` mit Metrik- und Subclustername. Die Abbildung zeigt `acc_mem_used`, deaktiviert für `cpu`:
+
+![Hinweis „Metric disabled for subcluster“ für acc_mem_used im Subcluster cpu.](img/removed_metric.png)
 
 
-#### Unterschiedliche Thresholds für verschiedene Subcluster
-Bei unterschiedlicher Ausstattung mit Cores, Memory, GPU-Memory usw. können die Thresholds pro Subcluster angegeben werden. Alle nicht genannten Subcluster erhalten die Konfiguration aus dem Hauptteil:
+### Unterschiedliche Thresholds für verschiedene Subcluster
+Subcluster mit anderer CPU-, Speicher- oder GPU-Ausstattung können eigene Schwellenwerte erhalten. Alle nicht genannten Subcluster verwenden weiterhin die Werte aus der Hauptkonfiguration:
 
 ```json
         {
             "name": "cpu_load",
             "unit": {
-                "base": "load"
+                "base": ""
             },
             "scope": "node",
             "aggregation": "avg",
@@ -153,120 +131,131 @@ Bei unterschiedlicher Ausstattung mit Cores, Memory, GPU-Memory usw. können die
         },
 ```
 
-#### Footprint-Metriken definieren
-Um die Metriken zu definieren, die im Footprint und im Polar Plot angezeigt werden, wird `"footprint": "avg"` (oder `sum`, je nach `aggregation`) ergänzt.
+### Footprint-Metriken definieren
+`aggregation` kombiniert gleichzeitig belegte Hardwareeinheiten. Beispielsweise addiert `sum` die Leistung mehrerer GPUs. Davon unabhängig wählt `footprint` die zeitliche Jobstatistik: `avg`, `min` oder `max`. Ein möglicher Eintrag für Footprint und Polarplot lautet `"aggregation": "sum", "footprint": "avg"`. Der Wert `footprint: sum` ist ungültig und verhindert einen erfolgreichen Archivstatus, auch wenn bereits Archivdateien entstanden sind.
 
 Darstellung im Footprint:
 
-![Footprint Beispiel](img/footprint.png)
+![Footprint mit Mittelwerten für CPU-Nutzeranteil, FLOP-Rate und IPC sowie den zugehörigen Referenzwerten.](img/footprint.png)
+
+Die Abbildung zeigt folgende Beispielwerte. Sie sind keine allgemeinen Sollwerte für Jobs:
+
+| Metrik | Mittelwert im Beispiel | Angezeigter Referenzwert |
+|---|---|---|
+| `cpu_user` | 98,55 % | 100 % |
+| `flops_any` | 399,69 GFLOP/s | 3000 GFLOP/s |
+| `ipc` | 2,94 Instructions/Cycle | 6 Instructions/Cycle |
 
 Darstellung im Polar Plot:
 
-![Polar Plot Beispiel](img/polar.png)
+![Polarplot mit den normierten Achsen cpu_user, flops_any und ipc sowie den Reihen Max, Avg und Min.](img/polar.png)
 
-Hat die Metrik den Eintrag `"lowerIsBetter": true`, wird dies durch einen Pfeil nach links dargestellt.
-In diesem Beispiel wurden ausschließlich Metriken verwendet, deren Scope `hwthread` ist, da nur diese Metriken bei shared Nodes aussagekräftig sind.
+Der Polarplot zeigt Maximum (`Max`), Mittelwert (`Avg`) und Minimum (`Min`) derselben drei Metriken auf normierten Achsen. Ein Punkt nahe dem Außenrand liegt nahe am jeweiligen Referenzwert. Er steht auf jeder Achse für einen anderen absoluten Zahlenwert. Footprint und Statistikansicht ergänzen diesen Überblick um Metriknamen, Zahlen und Einheiten.
 
-#### Energy Footprint definieren
-Um festzulegen, ob eine Metrik in den Energy Footprint einfließt, wird `"energy": "power"` ergänzt, wenn die Einheit Watt ist, oder `"energy": "energy"`, wenn die Einheit Joule ist.
-Aus allen `energy`-Metriken wird ein Gesamtverbrauch errechnet.
+Bei `"lowerIsBetter": true` kennzeichnet ein Pfeil nach links die umgekehrte Bewertung.
+Das Beispiel verwendet ausschließlich Metriken mit `scope: hwthread`, um die Messwerte auf gemeinsam genutzten Knoten den Jobs zuordnen zu können.
+
+### Energy Footprint definieren
+Für Leistungswerte in Watt ist `"energy": "power"` vorgesehen. Aus mittlerer Node-Leistung und Jobdauer berechnet das Backend die Energie in kWh, gerundet auf zwei Nachkommastellen: `avg(W) × numNodes × duration(s) / 3 600 000`. `aggregation: sum` summiert dabei die gleichzeitig verwendeten Hardwareeinheiten. Es summiert nicht die Zeitreihe. Beispiel:
+
+```json
+{
+  "name": "acc_power", "unit": {"base": "W"}, "scope": "accelerator",
+  "aggregation": "sum", "footprint": "avg", "energy": "power",
+  "timestep": 60, "peak": 700, "normal": 400
+}
+```
+
+Der Schemawert `energy: energy` ist noch nicht implementiert. Er liefert 0 und eine Warnung und eignet sich deshalb nicht für Joule-Zähler. Diese benötigen eine geprüfte Umrechnung in Leistung über das tatsächliche Messintervall. Gesamt-Node-Leistung und die darin enthaltene CPU-/GPU-Leistung dürfen nicht gleichzeitig als getrennte Energiebeiträge markiert sein, sonst wird doppelt gezählt. Die verfügbaren Messwerte und ihre Zuordnung zu Jobs müssen auf der jeweiligen Hardware geprüft sein.
 
 Für CPU-only-Jobs:
 
-![Energy Footprint CPU-only](img/energy.png)
+![Energieanzeige eines CPU-Jobs: Core 0,52 kWh aus core_power; Gesamtenergie 0,52 kWh.](img/energy.png)
+
+Im CPU-Beispiel betragen sowohl der Beitrag aus `core_power` als auch die Gesamtenergie **0,52 kWh**.
 
 Wenn GPUs zum Einsatz kommen, wird deren Verbrauch einzeln aufgeführt:
 
-![Energy Footprint mit GPU](img/energy_gpu.png)
+![Energieanzeige eines GPU-Jobs: Accelerator 1,74 kWh, Core 0,30 kWh und Gesamtenergie 2,04 kWh.](img/energy_gpu.png)
 
-Auf Intel-Systemen ist es ebenfalls möglich, den Stromverbrauch des Arbeitsspeichers auszulesen, bei AMD stehen keine Counter dafür zur Verfügung.
+Im GPU-Beispiel ergeben **1,74 kWh** aus `acc_power` und **0,30 kWh** aus `core_power` zusammen **2,04 kWh**. Diese Abbildungen erläutern die Darstellung; die Messwerte hängen vom konkreten Job ab.
 
-Optional kann in der `config.json` von `cc-backend` der Parameter `emission-constant` gesetzt werden. Er beschreibt den CO₂-Faktor des Rechenzentrumsstroms in g/kWh. Auf Basis dieses Werts und des gemessenen Energieverbrauchs wird automatisch die (theoretische) CO₂-Emission pro Job berechnet und im UI angezeigt.
+Ob separate Speicherenergie verfügbar ist, hängt von CPU-Generation, LIKWID-Version und Zugriffsrechten ab. Maßgeblich sind die Energiedomains, die der Prozessor auf den jeweiligen Knoten tatsächlich bereitstellt.
 
-### Änderungen aktivieren
+Der optionale Parameter `emission-constant` in `cc-backend/config.json` beschreibt den CO₂-Faktor des Rechenzentrumsstroms in g/kWh. Zusammen mit der gemessenen Energie berechnet das Backend daraus eine theoretische CO₂-Emission pro Job und zeigt sie im Webinterface an.
 
-Damit die Änderungen wirksam werden, muss `cc-backend` neu gestartet werden:
+<a id="1-metric-store-im-cc-backend-prufen"></a>
+
+## Metric-Store und Aufbewahrung
+
+Dateipfad (Standardinstallation gemäß Guide):
+
+`$INSTALL_DIR/cc-backend/config.json`
+
+Der Metric-Store wird über den Abschnitt `metric-store` in `cc-backend/config.json` konfiguriert:
+
+```json
+"metric-store": {
+  "checkpoints": {
+    "file-format": "json",
+    "directory": "./var/checkpoints"
+  },
+  "memory-cap": 100,
+  "retention-in-memory": "48h",
+  "cleanup": {
+    "mode": "archive",
+    "directory": "./var/archive"
+  }
+}
+```
+
+**Felder:**
+- `retention-in-memory`: Zeitraum, in dem Messdaten im RAM gehalten werden.
+- `checkpoints`: Ablage und Format der Sicherungspunkte.
+- `cleanup`: Verhalten für Daten außerhalb der RAM-Aufbewahrungszeit. `archive` schreibt sie ins angegebene Verzeichnis, `delete` entfernt sie. Aufbewahrungszeit und verfügbarer Plattenplatz müssen dazu passen.
+
+Auch Änderungen an den Store-Einstellungen benötigen einen Neustart von `cc-backend`:
+
 ```bash
 systemctl restart clustercockpit.service
 ```
 
----
-
-## 3. Prüfen, ob Metriken ankommen
-Für jeden Host, auf dem `cc-metric-collector` läuft, sollten sich nach und nach die Graphen mit Daten füllen.
-Falls stattdessen ein gelbes Feld angezeigt wird, kommen keine Daten an:
-
-![Hinweis fehlende Metrik](img/missing_metric.png)
-
-Es sollte überprüft werden, ob die Metrik vom `cc-metric-collector` mit *diesem* Namen gesendet und von `cc-backend` über `/api/write/` empfangen wird.
 
 
+### Aufbewahrung und Neustart prüfen
+
+JSON-Checkpoints sichern aktuelle Messreihen für einen kontrollierten Neustart. Dabei runden sie auf eine Nachkommastelle, beispielsweise 0,034 auf 0,0. Eine Prüfung vergleicht Zeitstempel und gerundete Werte vor und nach dem Neustart anhand eines Testjobs. Auch verspätet eingetroffene Messwerte gehören in diesen Vergleich.
+
+Die Aufbewahrungszeit sollte mindestens die maximale Jobdauer abdecken. Aktive Jobs bleiben unter normalen Bedingungen länger erhalten; das Speicherlimit und das beim Neustart geladene Retentionfenster setzen dem jedoch Grenzen. Vor Wartungsarbeiten sollten laufende Jobs möglichst abgeschlossen und ihre archivierten Werte geprüft sein.
 
 ## Beispielkonfigurationen
 
-Die folgenden JSON-Dateien zeigen eine produktive Beispielkonfiguration für einen Cluster mit CPU-, GPU-, Speicher-, Netzwerk- und Dateisystemmetriken.
+Das [RUB-Beispielprofil](example_profiles.de.md) enthält die vollständigen Backend-, UI-, Cluster- und Collector-Dateien samt Erläuterungen. Die Dateien sind eine standortspezifische Referenz; der [Schnellstart](cc_metric_collector_quicksetup.de.md) verwendet das kleinere Minimalprofil.
 
-### `cc-backend/config.json`
+<a id="cc-backendconfigjson"></a>
 
-[Datei öffnen](examples/rub/cc-backend/config.json)
+- [cc-backend/config.json](example_profiles.de.md#cc-backendconfigjson)
 
-<details>
-<summary>Inhalt anzeigen</summary>
+<a id="job-archiveclusterjson"></a>
 
-```json
---8<-- "examples/rub/cc-backend/config.json"
-```
+- [job-archive/cluster.json](example_profiles.de.md#job-archiveclusterjson)
 
-</details>
+<a id="cc-backendui-configjson"></a>
 
-### `job-archive/cluster.json`
+- [cc-backend/ui-config.json](example_profiles.de.md#cc-backendui-configjson)
 
-[Datei öffnen](examples/rub/job-archive/cluster.json)
+<a id="cc-metric-collectorconfigjson"></a>
 
-<details>
-<summary>Inhalt anzeigen</summary>
+- [cc-metric-collector/config.json](example_profiles.de.md#cc-metric-collectorconfigjson)
 
-```json
---8<-- "examples/rub/job-archive/cluster.json"
-```
+<a id="cc-metric-collectorrouterjson"></a>
 
-</details>
+- [cc-metric-collector/router.json](example_profiles.de.md#cc-metric-collectorrouterjson)
 
-### `cc-metric-collector/config.json`
+<a id="cc-metric-collectorreceiversjson"></a>
 
-[Datei öffnen](examples/rub/cc-metric-collector/config.json)
+- [cc-metric-collector/receivers.json](example_profiles.de.md#cc-metric-collectorreceiversjson)
 
-<details>
-<summary>Inhalt anzeigen</summary>
+<a id="cc-metric-collectorsinksjson"></a>
 
-```json
---8<-- "examples/rub/cc-metric-collector/config.json"
-```
-
-</details>
-
-### `cc-metric-collector/router.json`
-
-[Datei öffnen](examples/rub/cc-metric-collector/router.json)
-
-<details>
-<summary>Inhalt anzeigen</summary>
-
-```json
---8<-- "examples/rub/cc-metric-collector/router.json"
-```
-
-</details>
-
-### `cc-metric-collector/sinks.json`
-
-[Datei öffnen](examples/rub/cc-metric-collector/sinks.json)
-
-<details>
-<summary>Inhalt anzeigen</summary>
-
-```json
---8<-- "examples/rub/cc-metric-collector/sinks.json"
-```
-
-</details>
+- [cc-metric-collector/sinks.json](example_profiles.de.md#cc-metric-collectorsinksjson)
